@@ -1,26 +1,25 @@
 import logging
-
 from pywebio.output import put_text
-
 from src.GetAnswer.AccountManager import AccountManager
 from src.GetAnswer.api_client import get_content
+from src.GetAnswer.config import BASE_URL
 
 account_manager = AccountManager()
 
 
 def json_to_html(json_data, template_name):
+    # 校验数据是否有效
     if not json_data or "data" not in json_data:
         logging.error(f"Invalid or missing data in response for template: {template_name}")
         put_text("无效的作业数据，无法生成页面。")
         return ""
 
+    # 初始化HTML结构
     html_output = """
     <html>
     <head>
         <meta charset='utf-8'>
-    """
-    html_output += f"    <title>{template_name} | LaoShui</title>"
-    html_output += """
+        <title>{template_name} | LaoShui</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             body {
@@ -118,129 +117,104 @@ def json_to_html(json_data, template_name):
                 font-size: 0.9em;
             }
         </style>
-           <script src="https://file.xinjiaoyu.com/pages/mathjax/MathJax.js?config=TeX-AMS-MML_SVG"></script>
-           <script type=text/x-mathjax-config>MathJax.Hub.Config({
-              showProcessingMessages: false, //关闭js加载过程信息
-              messageStyle: "none", //不显示信息
-              jax: ["input/TeX", "input/MathML", "output/SVG"],
-              extensions: ["tex2jax.js", "TeX/mhchem.js", "TeX/autoload-all.js", "TeX/enclose.js", "TeX/cancel.js", "TeX/noErrors.js", "TeX/noUndefined.js"],
-              tex2jax: {
-                inlineMath: [["$", "$"], ["$$", "$$"]], //行内公式选择符
-                skipTags: ["script", "noscript", "style", "textarea", "pre", "code", "a"] //避开某些标签
-              },
-              "HTML-CSS": {
-                availableFonts: ["STIX","TeX"], //可选字体
-                showMathMenu: false //关闭右击菜单显示
-              }
-            });
-            MathJax.Hub.Queue(["Typeset",MathJax.Hub]);</script>
+        <script src="https://file.xinjiaoyu.com/pages/mathjax/MathJax.js?config=TeX-AMS-MML_SVG"></script>
     </head>
     <body>
     """
+
     html_output += f"    <h1>{template_name}</h1>"
 
-    #         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    # 之前用https://cdn.bootcdn.net/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML
-
-    last_parent_id = None
+    last_parent_id = None  # 用于跟踪题干的ID
 
     try:
         for item in json_data["data"]:
             question = item["question"]
-            answer = question['answer'].strip()  # Correct answer, e.g. 'A', 'B', etc.
+            answer = question['answer'].strip()  # 获取正确答案
 
-            # Check if the question has a parentId and fetch parent content if needed
+            # 判断题目是否有parentId并处理
             parent_id = question.get('parentId')
-            if parent_id and parent_id != "0":
+            if parent_id and parent_id != "0":  # 如果有题干且不为0
                 if parent_id != last_parent_id:
-                    if last_parent_id:
-                        # Close the previous parent block if a new parent starts
+                    if last_parent_id:  # 如果上一题有题干，先关闭上一组
                         html_output += "</div><hr>"
 
-                    # 获取题干
-                    put_text("Start GET parent content")
+                    # 获取题干内容
+                    put_text("开始获取题干内容")
                     fetch_parent_content = get_content(
-                        f"https://www.xinjiaoyu.com/api/v3/server_questions/questions/{parent_id}",
+                        f"{BASE_URL}/api/v3/server_questions/questions/{parent_id}",
                         account_manager.get_headers())
                     parent_content = fetch_parent_content['data']['content']
                     if parent_content:
                         html_output += f"<div class='parent'><p><b>题干: </b>{parent_content}</p>"
 
-                last_parent_id = parent_id
+                last_parent_id = parent_id  # 更新题干ID
 
-            # Extract required fields from the JSON
+            # 提取题目的其他信息
             question_number = question.get('questionNumber', '未知')
             type_name = question.get('typeName', '未知类型')
             type_detail_name = question.get('typeDetailName', '未知题型')
             difficulty_name = question.get('difficultyName', '未知难度')
 
-            # Determine whether to display type_detail_name
-            if type_name == type_detail_name:
-                header = f"第{question_number}题 ({type_name}) 难度 - {difficulty_name} ："
-            else:
+            # 根据题目类型和难度格式化题目标题
+            header = f"第{question_number}题 ({type_name}) 难度 - {difficulty_name} ："
+            if type_name != type_detail_name:
                 header = f"第{question_number}题 ({type_name}) - {type_detail_name} 难度 - {difficulty_name} ："
 
-            # Add the question container
+            # 添加问题内容
             html_output += f"<div class='question'><div class='question-header'>{header}</div>"
-
-            # Display the question content
             html_output += f"<p>{question['content']}</p>"
 
-            # Add options for multiple-choice questions (including multi-select)
+            # 判断并展示选项（多选题或单选题）
             if "options" in question and question['options']:
-                # Check if all options are null or empty
+                # 判断选项是否为空
                 all_options_empty = all(
                     option['optionContent'] is None or option['optionContent'].strip() == '' for option in
                     question["options"])
 
                 if all_options_empty:
-                    # Display options horizontally without content, but highlight the correct ones
+                    # 如果选项为空，仅展示选项字母（这部分是为语文的文言文短句写的 横向排列）
                     html_output += "<ul style='display: flex; justify-content: space-around; list-style-type: none;'>"
                     for option in question["options"]:
                         option_letter = option['option'].strip()
-
-                        # Check if this option is part of the correct answer(s)
+                        # 高亮显示正确答案
                         if option_letter in answer:
-                            # Add 'correct-option' class for correct answers
                             html_output += f"<li class='correct-option' style='width: auto;'><b>{option_letter}</b></li>"
                         else:
                             html_output += f"<li style='width: auto;'><b>{option_letter}</b></li>"
                     html_output += "</ul>"
                 else:
-                    # Display options normally with their content
+                    # 正常展示选项内容
                     html_output += "<ul>"
                     for option in question["options"]:
                         option_letter = option['option'].strip()
                         option_content = option['optionContent']
-
-                        # Check if this option is part of the correct answer(s)
+                        # 高亮显示正确答案
                         if option_letter in answer:
-                            # Add 'correct-option' class for correct answers
                             html_output += f"<li class='correct-option'><b>{option_letter}:</b> {option_content}</li>"
                         else:
                             html_output += f"<li><b>{option_letter}:</b> {option_content}</li>"
                     html_output += "</ul>"
-            elif "answer" in question:  # Handle non-choice questions
+            elif "answer" in question:  # 非选择题显示答案
                 html_output += f"<p><b>答案: </b><span class='fill-blank-answer'>{answer}</span></p>"
 
-            # Add explanation if available
+            # 如果有解析，展示解析
             if question.get("answerExplanation"):
                 html_output += f"<p class='explanation'><b>解析: </b>{question['answerExplanation']}</p>"
 
-            # Close question container
+            # 结束当前问题的HTML结构
             html_output += "</div>"
 
     except Exception as e:
         logging.error(f"Error while generating HTML: {e}")
         put_text("生成HTML时出错，请检查数据格式。")
 
+    # 关闭最后一个题干的HTML块
     if last_parent_id:
-        # Close the last parent block
         html_output += "</div><hr>"
 
-    # Footer
+    # 添加页脚
     html_output += "<div class='footer'>https://github.com/laoshuikaixue/xinjiaoyu<br>温馨提示：仅供学习使用，请勿直接抄袭答案。</div>"
 
-    # Close the body and html tags
+    # 关闭HTML标签
     html_output += "</body></html>"
     return html_output
