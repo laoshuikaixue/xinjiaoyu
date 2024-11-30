@@ -19,7 +19,9 @@ def json_to_html(json_data, template_name):
     <html>
     <head>
         <meta charset='utf-8'>
-        <title>{template_name} | LaoShui</title>
+    """
+    html_output += f"    <title>{template_name} | LaoShui</title>"
+    html_output += """
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             body {
