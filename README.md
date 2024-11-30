@@ -1,6 +1,6 @@
 # xinjiaoyu
 
-本项目是新教育智能平台（[www.xinjiaoyu.com](http://www.xinjiaoyu.com)）的相关研究
+本项目是新教育智能平台（http://www.xinjiaoyu.com）的相关研究
 
 ---
 
@@ -9,6 +9,12 @@
 ## `src/GetAnswer`:
 
 该目录包含基于 PyWebIO 的工具，用于生成作业（智能题卡）答案的 HTML 页面。
+
+生成的HTML文件可以用于部署静态网站 | Example：
+
+https://gitlab-xinjiaoyu.lao-shui.top/
+
+https://xinjiaoyu.laoshui.top/
 
 ## 使用指南
 
@@ -34,3 +40,10 @@
 本项目采用 [MIT License](LICENSE) 许可证。
 
 ---
+
+# 鸣谢
+https://github.com/LFWQSP2641/ZhiNengTiKa 本项目登录部分代码参考了本项目代码
+
+---
+
+## 写的比较粗糙 还有很多可以改进的地方 PRs Welcome
