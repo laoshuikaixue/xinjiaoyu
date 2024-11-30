@@ -8,6 +8,9 @@
 
 ## `src/GetAnswer`:
 
+![image](https://github.com/user-attachments/assets/12f396f5-eab6-48cc-bcab-135360809ee3)
+
+
 该目录包含基于 PyWebIO 的工具，用于生成作业（智能题卡）答案的 HTML 页面。
 
 生成的HTML文件可以用于部署静态网站 | Example：
