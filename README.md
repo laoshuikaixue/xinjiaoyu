@@ -1,6 +1,6 @@
 # xinjiaoyu
 
-本项目是新教育智能平台（http://www.xinjiaoyu.com）的相关研究
+本项目是新教育智能平台（[www.xinjiaoyu.com](http://www.xinjiaoyu.com)）的相关研究
 
 ---
 
