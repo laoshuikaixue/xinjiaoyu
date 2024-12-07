@@ -10,7 +10,7 @@ from src.GetAnswer.api_client import get_content
 from src.GetAnswer.config import BASE_URL
 from src.GetAnswer.html_generator import json_to_html
 
-# Set up logging
+# 设置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
@@ -43,7 +43,7 @@ def main():
 
         # 如果文件不存在，则请求服务器获取作业模板内容
         response_data = get_content(
-            f"{BASE_URL}/api/v3/server_homework/homework/template/question/list?templateCode={template_code}&studentId=3396605",
+            f"{BASE_URL}/api/v3/server_homework/homework/template/question/list?templateCode={template_code}&studentId={account_manager.get_studentId()}",
             account_manager.get_headers())  # 获取作业模板
 
         # 如果没有返回数据，记录警告并退出
@@ -98,10 +98,7 @@ if __name__ == '__main__':
     account_manager = AccountManager()
 
     # 如果没有找到用户数据文件，则进行登录
-    if not os.path.exists("user_data.json"):
-        account_manager.login("username", "password")  # 在这里填写你的用户名和密码
-    else:
-        logging.info("user_data.json 文件已存在，跳过登录步骤。")
+    account_manager.login("username", "password")  # 在这里填写你的用户名和密码
 
     # 确保输出目录存在
     output_folder = "output"

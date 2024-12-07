@@ -45,7 +45,7 @@ https://xinjiaoyu.laoshui.top/
 ---
 
 # 鸣谢
-https://github.com/LFWQSP2641/ZhiNengTiKa 本项目登录部分代码参考了此项目代码
+https://github.com/LFWQSP2641/ZhiNengTiKa 本项目登录部分代码参考了此项目的加密、鉴权部分代码
 
 ---
 

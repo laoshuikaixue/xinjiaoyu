@@ -2,3 +2,4 @@ requests
 pycryptodome
 pywebio
 crypto
+PyJWT
