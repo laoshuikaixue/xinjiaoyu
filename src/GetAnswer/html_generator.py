@@ -118,6 +118,10 @@ def json_to_html(json_data, template_name):
                 color: #aaa;
                 font-size: 0.9em;
             }
+            img {
+                max-width: 100%;
+                height: auto;
+            }
         </style>
         <script src="https://file.xinjiaoyu.com/pages/mathjax/MathJax.js?config=TeX-AMS-MML_SVG"></script>
     </head>
@@ -174,7 +178,7 @@ def json_to_html(json_data, template_name):
                     question["options"])
 
                 if all_options_empty:
-                    # 如果选项为空，仅展示选项字母（这部分是为语文的文言文短句写的 横向排列）
+                    # 如果选项为空，仅展示选项字母（这部分是为语文的文言文断句/判断题 写的 横向排列）
                     html_output += "<ul style='display: flex; justify-content: space-around; list-style-type: none;'>"
                     for option in question["options"]:
                         option_letter = option['option'].strip()
