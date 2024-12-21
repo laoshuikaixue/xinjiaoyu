@@ -1,8 +1,8 @@
-import logging
 from pywebio.output import put_text
 from src.GetAnswer.AccountManager import AccountManager
 from src.GetAnswer.api_client import get_content
 from src.GetAnswer.config import BASE_URL
+from loguru import logger
 
 account_manager = AccountManager()
 
@@ -10,7 +10,7 @@ account_manager = AccountManager()
 def json_to_html(json_data, template_name):
     # 校验数据是否有效
     if not json_data or "data" not in json_data:
-        logging.error(f"Invalid or missing data in response for template: {template_name}")
+        logger.error(f"Invalid or missing data in response for template: {template_name}")
         put_text("无效的作业数据，无法生成页面。")
         return ""
 
@@ -211,7 +211,7 @@ def json_to_html(json_data, template_name):
             html_output += "</div>"
 
     except Exception as e:
-        logging.error(f"Error while generating HTML: {e}")
+        logger.error(f"Error while generating HTML: {e}")
         put_text("生成HTML时出错，请检查数据格式。")
 
     # 关闭最后一个题干的HTML块

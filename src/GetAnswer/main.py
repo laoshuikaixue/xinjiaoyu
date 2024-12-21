@@ -1,4 +1,3 @@
-import logging
 import os
 
 from pywebio import start_server, session
@@ -10,8 +9,7 @@ from src.GetAnswer.api_client import get_content
 from src.GetAnswer.config import BASE_URL
 from src.GetAnswer.html_generator import json_to_html
 
-# 设置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from loguru import logger
 
 
 def main():
@@ -48,7 +46,7 @@ def main():
 
         # 如果没有返回数据，记录警告并退出
         if not response_data:
-            logging.warning("No data returned for the provided template code.")
+            logger.warning("No data returned for the provided template code.")
             return
 
         # 获取模板信息并输出
@@ -70,7 +68,7 @@ def main():
         with open(template_file, "w", encoding="utf-8") as f:
             f.write(html_result)
 
-        logging.info(f"HTML文件已保存到 {template_file}")
+        logger.info(f"HTML文件已保存到 {template_file}")
 
         clear()  # 清空页面内容
         # 显示成功提示并提供文件下载链接
@@ -89,7 +87,7 @@ def main():
 
     except Exception as e:
         # 捕获并记录错误
-        logging.error(f"程序执行过程中发生错误: {e}")
+        logger.error(f"程序执行过程中发生错误: {e}")
         put_text("主程序执行过程出现错误，请检查报错内容。")
 
 

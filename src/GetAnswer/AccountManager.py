@@ -1,4 +1,3 @@
-import logging
 import time
 import uuid
 import os
@@ -12,8 +11,7 @@ import jwt
 from src.GetAnswer.XinjiaoyuEncryptioner import XinjiaoyuEncryptioner
 from src.GetAnswer.config import BASE_URL
 
-# 设置日志
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+from loguru import logger
 
 
 class AccountManager:
@@ -34,14 +32,14 @@ class AccountManager:
         try:
             with open(self.DATA_FILE, "w", encoding="utf-8") as file:
                 json.dump(data, file, ensure_ascii=False, indent=4)
-            logging.info("用户数据保存成功")
+            logger.info("用户数据保存成功")
         except Exception as e:
-            logging.error(f"保存用户数据失败: {e}")
+            logger.error(f"保存用户数据失败: {e}")
 
     def load_user_data(self) -> None:
         """从文件加载用户数据"""
         if not os.path.exists(self.DATA_FILE):
-            logging.warning("用户数据文件不存在")
+            logger.warning("用户数据文件不存在")
             return
 
         try:
@@ -51,16 +49,16 @@ class AccountManager:
                 self.public_user_data = data.get("tokens", {})
                 self.HEADERS = data.get("headers", {})
                 self.studentId = data.get("user_info", {}).get("school", {}).get("studentId", {})
-            logging.info("用户数据加载成功")
+            logger.info("用户数据加载成功")
         except Exception as e:
-            logging.error(f"加载用户数据失败: {e}")
+            logger.error(f"加载用户数据失败: {e}")
 
     def login(self, username: str, password: str) -> bool:
         """用户登录主方法，如果 Token 未过期则直接返回成功"""
         if self.is_token_valid(self.public_user_data.get("token")):
             return True
 
-        logging.info("Token 无效或不存在，正在执行登录")
+        logger.info("Token 无效或不存在，正在执行登录")
         try:
             encoded_username = self._encrypt_data(username)
             encoded_password = self._encrypt_data(password)
@@ -69,12 +67,12 @@ class AccountManager:
 
             if response and response.get("code") == 200:
                 self._process_login_response(response, headers)
-                logging.info("登录成功")
+                logger.info("登录成功")
                 return True
 
-            logging.error(f"登录失败: {response.get('message', '未知错误') if response else '无响应'}")
+            logger.error(f"登录失败: {response.get('message', '未知错误') if response else '无响应'}")
         except Exception as e:
-            logging.error(f"登录过程中发生错误: {e}")
+            logger.error(f"登录过程中发生错误: {e}")
         return False
 
     @staticmethod
@@ -89,9 +87,9 @@ class AccountManager:
             if remaining_time > 0:
                 AccountManager._log_remaining_time(remaining_time)
                 return True
-            logging.warning("Token 已过期")
+            logger.warning("Token 已过期")
         except jwt.DecodeError:
-            logging.error("Token 解码失败")
+            logger.error("Token 解码失败")
         return False
 
     @staticmethod
@@ -101,7 +99,7 @@ class AccountManager:
         days, seconds = divmod(remaining_td.total_seconds(), 86400)
         hours, seconds = divmod(seconds, 3600)
         minutes, seconds = divmod(seconds, 60)
-        logging.info(f"Token 有效，剩余时间：{int(days)} 天 {int(hours)} 小时 {int(minutes)} 分钟 {int(seconds)} 秒")
+        logger.info(f"Token 有效，剩余时间：{int(days)} 天 {int(hours)} 小时 {int(minutes)} 分钟 {int(seconds)} 秒")
 
     def _encrypt_data(self, data: str) -> str:
         """对数据进行加密"""
@@ -141,7 +139,7 @@ class AccountManager:
         获取保存的 headers
         """
         if not self.HEADERS:
-            logging.warning("未找到 headers，请先登录")
+            logger.warning("未找到 headers，请先登录")
         return self.HEADERS
 
     def get_studentId(self) -> dict | None:
@@ -149,7 +147,7 @@ class AccountManager:
         获取保存的 studentId
         """
         if not self.studentId:
-            logging.warning("未找到 studentId，请先登录")
+            logger.warning("未找到 studentId，请先登录")
         return self.studentId
 
     def _make_request(self, url: str, headers: dict, json_data: dict) -> Optional[dict]:
@@ -158,11 +156,11 @@ class AccountManager:
             try:
                 response = requests.post(url, headers=headers, json=json_data, timeout=10)
                 if response.ok:
-                    logging.info(f"请求成功 (尝试 {attempt}/{self.MAX_RETRIES})")
+                    logger.info(f"请求成功 (尝试 {attempt}/{self.MAX_RETRIES})")
                     return response.json()
-                logging.error(f"请求失败 (尝试 {attempt}/{self.MAX_RETRIES}): {response.text}")
+                logger.error(f"请求失败 (尝试 {attempt}/{self.MAX_RETRIES}): {response.text}")
             except requests.RequestException as e:
-                logging.error(f"网络错误 (尝试 {attempt}/{self.MAX_RETRIES}): {e}")
+                logger.error(f"网络错误 (尝试 {attempt}/{self.MAX_RETRIES}): {e}")
             time.sleep(1)
-        logging.error("达到最大重试次数，请求失败")
+        logger.error("达到最大重试次数，请求失败")
         return None
