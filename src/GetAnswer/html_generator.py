@@ -25,11 +25,11 @@ def json_to_html(json_data, template_name):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             body {
-                font-family: Arial, sans-serif;
-                background-color: #f4f7f9;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #eef2f5;
                 color: #333;
                 line-height: 1.8;
-                padding: 40px 20px;
+                padding: 20px;
                 margin: 0 auto;
                 max-width: 900px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -39,12 +39,12 @@ def json_to_html(json_data, template_name):
             }
             h1 {
                 text-align: center;
-                font-size: 3em;
+                font-size: 2.5em;
                 font-weight: bold;
                 background: linear-gradient(90deg, #FF5733, #FFC300, #28B463, #3498DB);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
-                margin-bottom: 50px;
+                margin-bottom: 30px;
             }
             .parent {
                 background-color: #fff;
@@ -121,6 +121,21 @@ def json_to_html(json_data, template_name):
             img {
                 max-width: 100%;
                 height: auto;
+            }
+            .explanation {
+                background-color: #e8f4f8;
+                border-left: 4px solid #007BFF;
+                padding: 10px;
+                margin-top: 15px;
+                border-radius: 5px;
+            }
+            u {
+                text-decoration: none;
+                border-bottom: 1px solid black;
+                display: inline-block;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
             }
         </style>
         <script src="https://file.xinjiaoyu.com/pages/mathjax/MathJax.js?config=TeX-AMS-MML_SVG"></script>
