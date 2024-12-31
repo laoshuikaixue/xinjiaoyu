@@ -83,6 +83,8 @@ def main():
         toast("主程序执行过程出现错误，请检查报错内容。", color='error')
 
 if __name__ == '__main__':
+    logger.add("log/GetAnswer_main_{time}.log", rotation="1 MB", encoding="utf-8", retention="1 minute")
+
     # 初始化账户管理器
     account_manager = AccountManager()
 
