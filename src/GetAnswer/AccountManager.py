@@ -66,38 +66,62 @@ class AccountManager:
             headers, login_data = self._prepare_login_request(encoded_username, encoded_password)
             response = self._make_request(self.AUTH_URL, headers, login_data)
 
-            if response:
-                if response.get("code") == 200:
-                    self._process_login_response(response, headers)
-                    logger.info("登录成功")
-                    return True
+            if response and response.get("code") == 200:
+                self._process_login_response(response, headers)
+                logger.info("登录成功")
+                return True
 
-                elif response.get("code") == 400 and response.get("msg") == '验证码为空':
-                    logger.info("触发验证码验证")
-                    user_data = input("触发验证码验证，请手动输入官网正确登录后的数据（请先压缩成一行）: ")
-                    try:
-                        parsed_data = self._parse_login_data(user_data)
-                        self._process_login_response(parsed_data, headers)
-                        logger.info("手动登录数据解析成功")
-                        return True
-                    except Exception as e:
-                        logger.error(f"手动登录数据解析失败: {e}")
-                        sys.exit(1)
-
-                logger.error(f"登录失败: {response.get('message', '未知错误')}")
-                sys.exit(1)
-            else:
-                logger.error("无响应")
-                sys.exit(1)
-
+            logger.error(f"登录失败: {response.get('message', '未知错误') if response else '无响应'}")
+            sys.exit(1)
         except Exception as e:
             logger.error(f"登录过程中发生错误: {e}")
             sys.exit(1)
 
-    @staticmethod
-    def _parse_login_data(data: str) -> dict:
-        """解析用户手动输入的数据"""
-        return json.loads(data)
+    # 手机端暂时没有验证码验证
+    # def login(self, username: str, password: str) -> bool:
+    #     """用户登录主方法，如果 Token 未过期则直接返回成功"""
+    #     if self.is_token_valid(self.public_user_data.get("token")):
+    #         return True
+    #
+    #     logger.info("Token 无效或不存在，正在执行登录")
+    #     try:
+    #         encoded_username = self._encrypt_data(username)
+    #         encoded_password = self._encrypt_data(password)
+    #         headers, login_data = self._prepare_login_request(encoded_username, encoded_password)
+    #         response = self._make_request(self.AUTH_URL, headers, login_data)
+    #
+    #         if response:
+    #             if response.get("code") == 200:
+    #                 self._process_login_response(response, headers)
+    #                 logger.info("登录成功")
+    #                 return True
+    #
+    #             elif response.get("code") == 400 and response.get("msg") == '验证码为空':
+    #                 logger.info("触发验证码验证")
+    #                 user_data = input("触发验证码验证，请手动输入官网正确登录后的数据（请先压缩成一行）: ")
+    #                 try:
+    #                     parsed_data = self._parse_login_data(user_data)
+    #                     self._process_login_response(parsed_data, headers)
+    #                     logger.info("手动登录数据解析成功")
+    #                     return True
+    #                 except Exception as e:
+    #                     logger.error(f"手动登录数据解析失败: {e}")
+    #                     sys.exit(1)
+    #
+    #             logger.error(f"登录失败: {response.get('message', '未知错误')}")
+    #             sys.exit(1)
+    #         else:
+    #             logger.error("无响应")
+    #             sys.exit(1)
+    #
+    #     except Exception as e:
+    #         logger.error(f"登录过程中发生错误: {e}")
+    #         sys.exit(1)
+    #
+    # @staticmethod
+    # def _parse_login_data(data: str) -> dict:
+    #     """解析用户手动输入的数据"""
+    #     return json.loads(data)
 
     @staticmethod
     def is_token_valid(token: Optional[str]) -> bool:
@@ -136,12 +160,13 @@ class AccountManager:
         client_session_val = uuid.uuid4().hex
         encrypt_val = XinjiaoyuEncryptioner.get_md5(t_val, client_session_val)
         headers = {
-            "client": "front",
+            "client": "android",
             "clientSession": client_session_val,
             "Content-Type": "application/json",
             "User-Agent": "okhttp/4.9.3",
             "encrypt": encrypt_val,
             "t": t_val,
+            "app": "student"
         }
         login_data = {"password": password, "t": int(t_val), "username": username}
         return headers, login_data

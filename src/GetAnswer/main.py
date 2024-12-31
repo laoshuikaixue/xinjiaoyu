@@ -41,7 +41,7 @@ def main():
 
             # 如果文件不存在，则请求服务器获取作业模板内容
             response_data = get_content(
-                f"{BASE_URL}/api/v3/server_homework/homework/template/question/list?templateCode={template_code}&studentId={account_manager.get_studentId()}",
+                f"{BASE_URL}/api/v3/server_homework/homework/template/question/list?templateCode={template_code}&studentId={account_manager.get_studentId()}&isEncrypted=false",
                 account_manager.get_headers())  # 获取作业模板
 
             # 如果没有返回数据，记录警告并退出
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     # 如果没有找到用户数据文件，则进行登录
     account_manager.login("username", "password")  # 在这里填写你的用户名和密码
-    # 当遇到登录遇到验证码验证，手动输入数据时请先压缩成一行
+    # 手机端目前没有验证码验证，当遇到登录遇到验证码验证，手动输入数据时请先压缩成一行
 
     # 确保输出目录存在
     output_folder = "output"
