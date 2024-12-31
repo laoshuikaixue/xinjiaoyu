@@ -257,7 +257,7 @@ def json_to_html(json_data, template_name):
 
     # 添加页脚
     html_output += """
-    <div class="footer" data-aos='fade-up'>
+    <div class="footer">
     <p>GitHub: <a href="https://github.com/laoshuikaixue/xinjiaoyu" target="_blank" style="color: #3498DB;">https://github.com/laoshuikaixue/xinjiaoyu</a><br>
     温馨提示：仅供学习使用，请勿直接抄袭答案。</p>
     </div>
