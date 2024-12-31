@@ -38,8 +38,9 @@ https://xinjiaoyu.laoshui.top/
    ```
 
 3. 配置变量：
+
    在 `src/GetAnswer/main.py` 文件的主函数中，填写你的用户名和密码，用于后续的请求验证。
-   * 2024.12.27前后 新教育平台增加了登录时的验证码 如果遇到验证码 请手动输入返回的数据（请求URL为: https://www.xinjiaoyu.com/api/v3/server_system/auth/login 需压缩成一行）
+   * **2024.12.27前后 新教育平台增加了登录时的验证码 如果遇到验证码 请手动输入返回的数据（请求URL为: `https://www.xinjiaoyu.com/api/v3/server_system/auth/login` 需压缩成一行）**
    * 注意：由于设计的原因，现思路为首先通过提交作业的接口 获取templateCode对应的paperID 再发送一遍请求解析 所以只能在允许提交作业时间段 以及你选修了该门学科才可以获取到paperID进行解析
 
 4. 运行程序：
