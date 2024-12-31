@@ -1,3 +1,4 @@
+import sys
 import time
 import uuid
 import os
@@ -65,15 +66,38 @@ class AccountManager:
             headers, login_data = self._prepare_login_request(encoded_username, encoded_password)
             response = self._make_request(self.AUTH_URL, headers, login_data)
 
-            if response and response.get("code") == 200:
-                self._process_login_response(response, headers)
-                logger.info("登录成功")
-                return True
+            if response:
+                if response.get("code") == 200:
+                    self._process_login_response(response, headers)
+                    logger.info("登录成功")
+                    return True
 
-            logger.error(f"登录失败: {response.get('message', '未知错误') if response else '无响应'}")
+                elif response.get("code") == 400 and response.get("msg") == '验证码为空':
+                    logger.info("触发验证码验证")
+                    user_data = input("触发验证码验证，请手动输入官网正确登录后的数据（请先压缩成一行）: ")
+                    try:
+                        parsed_data = self._parse_login_data(user_data)
+                        self._process_login_response(parsed_data, headers)
+                        logger.info("手动登录数据解析成功")
+                        return True
+                    except Exception as e:
+                        logger.error(f"手动登录数据解析失败: {e}")
+                        sys.exit(1)
+
+                logger.error(f"登录失败: {response.get('message', '未知错误')}")
+                sys.exit(1)
+            else:
+                logger.error("无响应")
+                sys.exit(1)
+
         except Exception as e:
             logger.error(f"登录过程中发生错误: {e}")
-        return False
+            sys.exit(1)
+
+    @staticmethod
+    def _parse_login_data(data: str) -> dict:
+        """解析用户手动输入的数据"""
+        return json.loads(data)
 
     @staticmethod
     def is_token_valid(token: Optional[str]) -> bool:
