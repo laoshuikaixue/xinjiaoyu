@@ -12,7 +12,9 @@
 
 ![image](https://github.com/user-attachments/assets/65b39489-48d3-4ca9-9bbe-068a85c0ab04)
 
-动画演示：https://github.com/user-attachments/assets/4d81bc74-dde7-45bc-b525-a2598f3e58b0
+动画演示：
+
+https://github.com/user-attachments/assets/4d81bc74-dde7-45bc-b525-a2598f3e58b0
 
 该目录包含基于 PyWebIO 的工具，用于生成作业（智能题卡）答案的 HTML 页面。
 
