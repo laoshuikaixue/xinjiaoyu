@@ -36,6 +36,7 @@ def json_to_html(json_data, template_name):
                 border-radius: 10px;
                 background: #ffffff;
                 overflow-x: hidden;
+                scroll-behavior: smooth;
             }
             h1 {
                 text-align: center;
@@ -122,12 +123,19 @@ def json_to_html(json_data, template_name):
                 max-width: 100%;
                 height: auto;
             }
-            .explanation {
+            .explanation-container {
                 background-color: #e8f4f8;
                 border-left: 4px solid #007BFF;
                 padding: 10px;
                 margin-top: 15px;
                 border-radius: 5px;
+            }
+            .explanation-header {
+                font-weight: bold;
+                margin-bottom: 5px;
+            }
+            .explanation-content {
+                padding-left: 10px;
             }
             u {
                 text-decoration: none;
@@ -138,14 +146,21 @@ def json_to_html(json_data, template_name):
                 overflow-wrap: break-word;
             }
         </style>
-        <script src="https://file.xinjiaoyu.com/pages/mathjax/MathJax.js?config=TeX-AMS-MML_SVG"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     </head>
     <body>
+    <script>
+        AOS.init({
+            duration: 1200, // 动画持续时间
+        });
+    </script>
     """
 
     html_output += f"    <h1>{template_name}</h1>"
 
     last_parent_id = None  # 用于跟踪题干的ID
+    index = 0  # 用于计算动画延迟
 
     try:
         for item in json_data["data"]:
@@ -166,7 +181,7 @@ def json_to_html(json_data, template_name):
                         account_manager.get_headers())
                     parent_content = fetch_parent_content['data']['content']
                     if parent_content:
-                        html_output += f"<div class='parent'><p><b>题干: </b>{parent_content}</p>"
+                        html_output += f"<div class='parent' data-aos='fade-up'><p><b>题干: </b>{parent_content}</p>"
 
                 last_parent_id = parent_id  # 更新题干ID
 
@@ -182,7 +197,7 @@ def json_to_html(json_data, template_name):
                 header = f"第{question_number}题 ({type_name}) - {type_detail_name} 难度 - {difficulty_name} ："
 
             # 添加问题内容
-            html_output += f"<div class='question'><div class='question-header'>{header}</div>"
+            html_output += f"<div class='question' data-aos='fade-up' style='--index: {index};'><div class='question-header'>{header}</div>"
             html_output += f"<p>{question['content']}</p>"
 
             # 判断并展示选项（多选题或单选题）
@@ -220,10 +235,16 @@ def json_to_html(json_data, template_name):
 
             # 如果有解析，展示解析
             if question.get("answerExplanation"):
-                html_output += f"<p class='explanation'><b>解析: </b>{question['answerExplanation']}</p>"
+                html_output += f"""
+                <div class='explanation-container' data-aos='fade-up'>
+                    <div class='explanation-header'>解析:</div>
+                    <div class='explanation-content'>{question['answerExplanation']}</div>
+                </div>
+                """
 
             # 结束当前问题的HTML结构
             html_output += "</div>"
+            index += 1
 
     except Exception as e:
         logger.error(f"Error while generating HTML: {e}")
@@ -235,7 +256,7 @@ def json_to_html(json_data, template_name):
 
     # 添加页脚
     html_output += """
-    <div class="footer">
+    <div class="footer" data-aos='fade-up'>
     <p>GitHub: <a href="https://github.com/laoshuikaixue/xinjiaoyu" target="_blank" style="color: #3498DB;">https://github.com/laoshuikaixue/xinjiaoyu</a><br>
     温馨提示：仅供学习使用，请勿直接抄袭答案。</p>
     </div>
