@@ -4,7 +4,8 @@ from urllib.parse import urlsplit
 from pywebio.output import put_text
 from loguru import logger
 
-def get_content(url, headers=None, log_visual=True):
+
+def get_content(url, headers=None, log_visual=True, enable_log=True):
     """
     Fetch content from the provided URL while protecting privacy by omitting the query parameters in logs.
 
@@ -19,9 +20,10 @@ def get_content(url, headers=None, log_visual=True):
     parsed_url = urlsplit(url)
     safe_url = f"{parsed_url.path}"
 
-    logger.info(f"Fetching content from URL: {safe_url}")
-    if log_visual:
-        put_text(f"Fetching content from URL: {safe_url}")
+    if enable_log:
+        logger.info(f"Fetching content from URL: {safe_url}")
+        if log_visual:
+            put_text(f"Fetching content from URL: {safe_url}")
 
     try:
         # Send the request with or without headers

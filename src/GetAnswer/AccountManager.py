@@ -144,7 +144,7 @@ class AccountManager:
 
     def check_current_account_valid(self):
         url = "https://www.xinjiaoyu.com/api/v3/server_questions/category/tree/list"
-        response = get_content(url, self.get_headers(), False)
+        response = get_content(url, self.get_headers(), False, False)
         return response.get("code") == 200
 
     @staticmethod

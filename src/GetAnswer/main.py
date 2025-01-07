@@ -24,6 +24,14 @@ def main():
             clear()
             continue  # 重新提示输入
 
+        # 去掉最后的&及其后面的部分（适用于自助题卡 获取答案时不需要此参数）
+        template_code = template_code.split('&')[0]
+
+        # 确保输出目录存在 否则会报错
+        output_folder = "output"
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
         try:
             # 设置输出文件路径
             template_file = os.path.join(output_folder, f"output-{template_code}.html")
@@ -96,11 +104,6 @@ if __name__ == '__main__':
     # 如果没有找到用户数据文件，则进行登录
     account_manager.login("username", "password")  # 在这里填写你的用户名和密码
     # 手机端目前没有验证码验证，当遇到登录遇到验证码验证，手动输入数据时请先压缩成一行
-
-    # 确保输出目录存在
-    output_folder = "output"
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
 
     # 启动PyWebIO服务器并执行主函数
     start_server(main, port=8080)
