@@ -10,6 +10,7 @@ import requests
 import jwt
 
 from src.GetAnswer.XinjiaoyuEncryptioner import XinjiaoyuEncryptioner
+from src.GetAnswer.api_client import get_content
 from src.GetAnswer.config import BASE_URL
 
 from loguru import logger
@@ -55,11 +56,11 @@ class AccountManager:
             logger.error(f"加载用户数据失败: {e}")
 
     def login(self, username: str, password: str) -> bool:
-        """用户登录主方法，如果 Token 未过期则直接返回成功"""
-        if self.is_token_valid(self.public_user_data.get("token")):
+        """用户登录主方法，如果 Token 未过期且账号有效则直接返回成功"""
+        if self.is_token_valid(self.public_user_data.get("token")) and self.check_current_account_valid():
             return True
 
-        logger.info("Token 无效或不存在，正在执行登录")
+        logger.info("Token 无效或账号无效，正在执行登录")
         try:
             encoded_username = self._encrypt_data(username)
             encoded_password = self._encrypt_data(password)
@@ -139,6 +140,11 @@ class AccountManager:
         except jwt.DecodeError:
             logger.error("Token 解码失败")
         return False
+
+    def check_current_account_valid(self):
+        url = "https://www.xinjiaoyu.com/api/v3/server_questions/category/tree/list"
+        response = get_content(url, self.get_headers(), False)
+        return response.get("code") == 200
 
     @staticmethod
     def _log_remaining_time(remaining_time: int) -> None:
