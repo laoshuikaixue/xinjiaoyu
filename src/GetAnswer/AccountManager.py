@@ -70,6 +70,7 @@ class AccountManager:
             if response and response.get("code") == 200:
                 self._process_login_response(response, headers)
                 logger.info("登录成功")
+                self.load_user_data()  # 登录成功后重新加载用户数据
                 return True
 
             logger.error(f"登录失败: {response.get('message', '未知错误') if response else '无响应'}")
@@ -187,6 +188,7 @@ class AccountManager:
             "Authorization": f'JBY {self.public_user_data["token"]}',
             "accessToken": self.public_user_data["accessToken"],
         })
+        self.studentId = self.user_data.get("school", {}).get("studentId", {})
         self.save_user_data({"user_info": self.user_data, "tokens": self.public_user_data, "headers": self.HEADERS})
 
     def get_headers(self) -> dict | None:
