@@ -176,7 +176,7 @@ def json_to_html(json_data, template_name):
                         html_output += "</div><hr>"
 
                     # 获取题干内容
-                    put_text("开始获取题干内容")
+                    put_text("🕒 开始获取题干内容...")
                     fetch_parent_content = get_content(
                         f"{BASE_URL}/api/v3/server_questions/questions/{parent_id}",
                         account_manager.get_headers())
