@@ -24,17 +24,42 @@ def json_to_html(json_data, template_name):
     html_output += """
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
+            :root {
+                --bg-color: #ffffff;
+                --text-color: #333;
+                --card-bg: #ffffff;
+                --border-color: #ddd;
+                --button-bg: #4CAF50;
+                --button-hover: #45a049;
+                --option-bg: #f0f0f0;
+                --correct-bg: #dff0d8;
+                --explanation-bg: #e8f4f8;
+                --explanation-border: #007BFF;
+            }
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg-color: #1a1a1a;
+                    --text-color: #e0e0e0;
+                    --card-bg: #2d2d2d;
+                    --border-color: #404040;
+                    --button-bg: #2d7d32;
+                    --button-hover: #245d28;
+                    --option-bg: #404040;
+                    --correct-bg: #1a331a;
+                    --explanation-bg: #1a2d3d;
+                    --explanation-border: #0056b3;
+                }
+            }
             body {
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #eef2f5;
-                color: #333;
+                background-color: var(--bg-color);
+                color: var(--text-color);
                 line-height: 1.8;
                 padding: 20px;
                 margin: 0 auto;
                 max-width: 900px;
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
                 border-radius: 10px;
-                background: #ffffff;
                 overflow-x: hidden;
                 scroll-behavior: smooth;
             }
@@ -48,20 +73,17 @@ def json_to_html(json_data, template_name):
                 margin-bottom: 30px;
             }
             .parent {
-                background-color: #fff;
-                border: 1px solid #ddd;
+                background-color: var(--card-bg);
+                border: 1px solid var(--border-color);
                 border-radius: 10px;
                 padding: 20px;
                 margin-bottom: 30px;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                 transition: all 0.3s ease;
             }
-            .parent:hover {
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            }
             .question {
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
+                background-color: var(--card-bg);
+                border: 1px solid var(--border-color);
                 border-radius: 8px;
                 padding: 15px;
                 margin-bottom: 15px;
@@ -82,7 +104,7 @@ def json_to_html(json_data, template_name):
                 padding: 0;
             }
             li {
-                background: #f0f0f0;
+                background: var(--option-bg);
                 padding: 10px;
                 margin-bottom: 10px;
                 border-radius: 6px;
@@ -90,23 +112,28 @@ def json_to_html(json_data, template_name):
                 transition: background 0.3s ease;
             }
             li.correct-option {
-                background: #dff0d8;
-                border: 1px solid #4CAF50;
+                background: var(--correct-bg);
+                border: 1px solid var(--button-bg);
                 font-weight: bold;
-            }
-            li:hover {
-                background: #e0e0e0;
             }
             .fill-blank-answer {
                 font-weight: bold;
-                color: #007BFF;
+                color: var(--explanation-border);
             }
-            .fill-blank {
-                border-bottom: 1px solid black;
-                display: inline-block;
-                width: 80px;
-                margin-left: 5px;
-                margin-right: 5px;
+            .explanation-container {
+                background-color: var(--explanation-bg);
+                border-left: 4px solid var(--explanation-border);
+                padding: 10px;
+                margin-top: 15px;
+                border-radius: 5px;
+            }
+            hr {
+                border: none;
+                border-top: 1px solid var(--border-color);
+                margin: 20px 0;
+            }
+            a {
+                color: var(--explanation-border);
             }
             hr {
                 border: none;
@@ -122,20 +149,6 @@ def json_to_html(json_data, template_name):
             img {
                 max-width: 100%;
                 height: auto;
-            }
-            .explanation-container {
-                background-color: #e8f4f8;
-                border-left: 4px solid #007BFF;
-                padding: 10px;
-                margin-top: 15px;
-                border-radius: 5px;
-            }
-            .explanation-header {
-                font-weight: bold;
-                margin-bottom: 5px;
-            }
-            .explanation-content {
-                padding-left: 10px;
             }
             u {
                 text-decoration: none;
