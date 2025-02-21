@@ -17,6 +17,23 @@ def update_progress(progress, message):
     put_text(f'🕒 {message}')
 
 
+def get_video_urls(template_code):
+    """
+    获取微课视频 URLs
+    """
+    video_url_api = f"{BASE_URL}/api/v3/server_homework/homework/point/videos/list?homeworkId=&templateCode={template_code}"
+    try:
+        response_data = get_content(video_url_api, account_manager.get_headers())
+        if response_data and response_data['code'] == 200 and response_data['data']:
+            return response_data['data']
+        else:
+            logger.warning(f"未获取到微课视频数据, 模板编号: {template_code}")
+            return None
+    except Exception as e:
+        logger.error(f"获取微课视频URL时出错: {e}")
+        return None
+
+
 def main():
     session.run_js('document.title="Get Answer Application | LaoShui"')  # 设置浏览器标题
 
@@ -52,6 +69,13 @@ def main():
             put_processbar('bar')  # 创建进度条容器
             update_progress(5, '开始处理请求...')
 
+            # 获取微课视频数据
+            update_progress(10, '正在获取微课视频信息...')
+            video_data = get_video_urls(template_code)
+            if video_data:
+                logger.info(f"存在微课视频数据")
+                toast("已获取到微课视频信息", color='info')
+
             # 获取模板数据
             update_progress(15, '正在获取模板基本信息...')
             response_data = get_content(
@@ -82,7 +106,7 @@ def main():
 
             # 生成HTML内容
             update_progress(75, '正在生成HTML内容...')
-            html_result = json_to_html(homework_response, template_name)
+            html_result = json_to_html(homework_response, template_name, video_data)
 
             # 保存文件
             update_progress(90, '正在保存文件...')

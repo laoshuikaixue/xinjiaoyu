@@ -73,7 +73,7 @@ class AccountManager:
                 self.load_user_data()  # 登录成功后重新加载用户数据
                 return True
 
-            logger.error(f"登录失败: {response.get('message', '未知错误') if response else '无响应'}")
+            logger.error(f"登录失败: {response.get('msg', '未知错误') if response else '无响应'}")
             sys.exit(1)
         except Exception as e:
             logger.error(f"登录过程中发生错误: {e}")
