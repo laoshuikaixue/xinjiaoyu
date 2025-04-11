@@ -1,19 +1,17 @@
-import sys
+import json
+import os
 import time
 import uuid
-import os
-import json
 from datetime import timedelta
 from typing import Optional
 
-import requests
 import jwt
+import requests
+from loguru import logger
 
 from src.GetAnswer.XinjiaoyuEncryptioner import XinjiaoyuEncryptioner
 from src.GetAnswer.api_client import get_content
 from src.GetAnswer.config import BASE_URL
-
-from loguru import logger
 
 
 class AccountManager:
@@ -32,11 +30,43 @@ class AccountManager:
     def save_user_data(self, data: dict) -> None:
         """保存用户数据到文件"""
         try:
+            # 如果已有用户名和密码，确保它们被保留
+            if os.path.exists(self.DATA_FILE):
+                try:
+                    with open(self.DATA_FILE, "r", encoding="utf-8") as file:
+                        existing_data = json.load(file)
+                        if "username" in existing_data and "password" in existing_data:
+                            data["username"] = existing_data["username"]
+                            data["password"] = existing_data["password"]
+                except Exception:
+                    pass  # 如果读取失败，继续使用新数据
+                    
             with open(self.DATA_FILE, "w", encoding="utf-8") as file:
                 json.dump(data, file, ensure_ascii=False, indent=4)
             logger.info("用户数据保存成功")
         except Exception as e:
             logger.error(f"保存用户数据失败: {e}")
+            
+    def _save_credentials(self, username: str, password: str) -> None:
+        """保存用户名和密码到用户数据文件"""
+        try:
+            data = {}
+            if os.path.exists(self.DATA_FILE):
+                try:
+                    with open(self.DATA_FILE, "r", encoding="utf-8") as file:
+                        data = json.load(file)
+                except Exception:
+                    pass  # 如果读取失败，使用空字典
+            
+            # 更新用户名和密码
+            data["username"] = username
+            data["password"] = password
+            
+            with open(self.DATA_FILE, "w", encoding="utf-8") as file:
+                json.dump(data, file, ensure_ascii=False, indent=4)
+            logger.info("用户凭据保存成功")
+        except Exception as e:
+            logger.error(f"保存用户凭据失败: {e}")
 
     def load_user_data(self) -> None:
         """从文件加载用户数据"""
@@ -69,15 +99,17 @@ class AccountManager:
 
             if response and response.get("code") == 200:
                 self._process_login_response(response, headers)
+                # 保存用户名和密码，用于自动重新登录
+                self._save_credentials(username, password)
                 logger.info("登录成功")
                 self.load_user_data()  # 登录成功后重新加载用户数据
                 return True
 
             logger.error(f"登录失败: {response.get('msg', '未知错误') if response else '无响应'}")
-            sys.exit(1)
+            return False  # 返回False而不是退出程序，允许调用者处理登录失败
         except Exception as e:
             logger.error(f"登录过程中发生错误: {e}")
-            sys.exit(1)
+            return False  # 返回False而不是退出程序，允许调用者处理登录失败
 
     # 手机端暂时没有验证码验证
     # def login(self, username: str, password: str) -> bool:
