@@ -27,7 +27,7 @@ def json_to_html(json_data, template_name, video_data=None):
         put_text("无效的作业数据，无法生成页面。")
         return ""
 
-    # --- HTML头部和CSS样式 (保持不变) ---
+    # --- HTML头部和CSS样式 ---
     html_output = """
     <html>
     <head>
@@ -504,7 +504,7 @@ def json_to_html(json_data, template_name, video_data=None):
     """
     html_output += f"    <h1>{template_name}</h1>"
 
-    # --- 视频处理 (保持不变) ---
+    # --- 视频处理 ---
     if video_data:
         html_output += "<div class='video-section'>"
         html_output += "<div class='video-card'>"
@@ -544,7 +544,7 @@ def json_to_html(json_data, template_name, video_data=None):
             current_question_data = item["question"]
             current_parent_id = current_question_data.get('parentId')
 
-            # --- 题干处理 (保持不变) ---
+            # --- 题干处理 ---
             if current_parent_id and current_parent_id != "0":
                 if current_parent_id != last_parent_id:
                     if last_parent_id:
@@ -675,7 +675,7 @@ def json_to_html(json_data, template_name, video_data=None):
                 html_output += f"<div class='question' style='--index: {i};'><div class='question-header'>{header_single}</div>"
                 html_output += f"<p>{current_content}</p>"
 
-                # 处理选项或答案 (逻辑不变)
+                # 处理选项或答案
                 if "options" in current_question_data and current_question_data['options']:
                     all_options_empty = all(
                         option.get('optionContent') is None or str(option.get('optionContent', '')).strip() == ''
@@ -703,7 +703,7 @@ def json_to_html(json_data, template_name, video_data=None):
                 else:
                     html_output += f"<p><b>答案: </b>暂无</p>"
 
-                # 处理解析 (逻辑不变)
+                # 处理解析
                 if current_explanation:
                     html_output += f"""
                             <div class='explanation-container' style='--index: {i};'>
@@ -723,7 +723,7 @@ def json_to_html(json_data, template_name, video_data=None):
         logger.error(f"生成HTML时发生未预料的错误: {e}", exc_info=True)
         put_text(f"生成HTML时出错: {e}")
 
-    # --- HTML收尾和JS (保持不变) ---
+    # --- HTML收尾和JS ---
     if last_parent_id:
         html_output += "</div><hr>"
 
