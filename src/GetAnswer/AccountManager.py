@@ -199,16 +199,15 @@ class AccountManager:
         client_session_val = uuid.uuid4().hex
         encrypt_val = XinjiaoyuEncryptioner.get_md5(t_val, client_session_val)
         headers = {
-            "accesstoken": "",
-            "authorization": "",
-            "client": "applet",
-            "content-type": "application/json",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf254032b) XWEB/13655",
-            "xweb_xhr": "1",
-            "clientSession": client_session_val,
-            "encrypt": encrypt_val,
-            "t": t_val,
-            "app": "student"
+            'Content-Type': "application/json",
+            'accesstoken': "",
+            'authorization': "",
+            'client': "applet",
+            'xweb_xhr': "1",
+            'clientsession': client_session_val,
+            'encrypt': encrypt_val,
+            't': t_val,
+            'app': "student",
         }
         login_data = {"username": username, "password": password, "t": int(t_val)}
         return headers, login_data

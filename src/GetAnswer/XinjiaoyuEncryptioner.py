@@ -34,5 +34,5 @@ class XinjiaoyuEncryptioner:
         """
         生成请求的 MD5 加密字符串
         """
-        raw_data = "jbyxinjiaoyu" + t_value + client_session_value + "front"
+        raw_data = "jbyxinjiaoyu" + t_value + client_session_value + "applet"
         return hashlib.md5(raw_data.encode('utf-8')).hexdigest()
