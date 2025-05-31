@@ -107,7 +107,20 @@ def get_template_data(template_code, retry=True):
         # 检查是否获取成功
         if response_data and response_data.get('code') == 200 and response_data.get('data'):
             return response_data
-        # 检查是否是登录失效 - 根据用户提供的信息，登录失效时code为410且msg为"请先登录！
+        # 检查是否是登录失效 - code为410或msg包含"请先登录"
+        elif response_data and (
+            response_data.get('code') == 410 or
+            (isinstance(response_data.get('msg'), str) and '请先登录' in response_data.get('msg'))
+        ):
+            logger.warning(f"检测到登录失效，尝试自动重新登录，模板编号: {template_code}")
+            if retry and check_and_relogin():
+                logger.info("重新登录成功，重试获取模板数据")
+                toast("重新登录成功，正在重试获取数据...", color='info')
+                return get_template_data(template_code, False)  # 重试一次，防止无限循环
+            else:
+                logger.error("自动重新登录失败，请检查账号信息")
+                toast("自动重新登录失败，请检查账号信息", color='error')
+                return None
         else:
             logger.warning(f"未获取到有效模板数据, 模板编号: {template_code}")
             return None
