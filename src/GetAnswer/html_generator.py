@@ -516,14 +516,13 @@ def json_to_html(json_data, template_name, video_data=None):
             <video id="videoPlayer" controls preload="metadata" src="{first_video_url}"></video>
         </div>
         """
-        if len(video_data) > 1:
-            html_output += "<div class='video-selector'>"
-            for index, video in enumerate(video_data):
-                video_name = video['videoName']
-                video_url = video['videoUrl']
-                active_class = " active" if index == 0 else ""
-                html_output += f"""<button class="video-btn{active_class}" data-video-url="{video_url}">{video_name}</button>"""
-            html_output += "</div>"
+        html_output += "<div class='video-selector'>"
+        for index, video in enumerate(video_data):
+            video_name = video['videoName']
+            video_url = video['videoUrl']
+            active_class = " active" if index == 0 else ""
+            html_output += f"""<button class="video-btn{active_class}" data-video-url="{video_url}">{video_name}</button>"""
+        html_output += "</div>"
         html_output += "</div>"
         html_output += "</div>"
         html_output += "</div>"
@@ -687,7 +686,8 @@ def json_to_html(json_data, template_name, video_data=None):
                             option_letter = option.get('option', '').strip()
                             is_correct = option_letter in current_answer.replace(',', '').replace(' ', '')
                             css_class = 'correct-option' if is_correct else ''
-                            html_output += f"<li class='{css_class}' style='width: auto; background: var(--card-bg); border: 1px solid var(--border-color); margin: 0 5px;'><b>{option_letter}</b></li>"
+                            # 移除背景样式覆盖，使用CSS类中定义的样式
+                            html_output += f"<li class='{css_class}' style='width: auto; margin: 0 5px;'><b>{option_letter}</b></li>"
                         html_output += "</ul>"
                     else:
                         html_output += "<ul>"
