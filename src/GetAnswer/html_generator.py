@@ -284,6 +284,34 @@ def json_to_html(json_data, template_name, video_data=None):
                 border: 1px solid var(--correct-border);
                 font-weight: bold;
             }
+            
+            /* 断句题选项样式 */
+            .segmentation-options {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-around;
+                list-style-type: none;
+                padding: 10px 0;
+                gap: 10px;
+            }
+            .segmentation-options li {
+                flex: 0 1 auto;
+                margin: 5px;
+                min-width: 30px;
+                text-align: center;
+                padding: 8px 12px;
+            }
+            /* 在小屏幕上调整断句题选项 */
+            @media screen and (max-width: 480px) {
+                .segmentation-options {
+                    justify-content: center;
+                }
+                .segmentation-options li {
+                    min-width: 25px;
+                    padding: 6px 10px;
+                    margin: 3px;
+                }
+            }
 
             /* 填空题答案样式 */
             .fill-blank-answer {
@@ -365,266 +393,6 @@ def json_to_html(json_data, template_name, video_data=None):
                 word-wrap: break-word; /* 强制长单词换行 */
                 overflow-wrap: break-word; /* 同上 */
             }
-
-            /* 视频区域 */
-            .video-section {
-                margin-bottom: 50px;
-                /* 初始动画状态 */
-                opacity: 1; /* 改为默认可见 */
-                transform: translateY(0); /* 移除初始偏移 */
-                animation: fadeInUp 0.6s var(--animation-timing) forwards;
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-            /* 视频播放区域和列表的布局容器 */
-            @media screen and (min-width: 768px) {
-                .video-layout {
-                    display: grid;
-                    grid-template-columns: 70% 30%;
-                    gap: 20px;
-                }
-            }
-            /* 视频卡片容器 */
-            .video-card {
-                background-color: var(--card-bg);
-                border-radius: 20px;
-                overflow: hidden;
-                box-shadow: var(--card-shadow);
-                border: 1px solid var(--border-color);
-                transition: all 0.4s var(--animation-timing);
-                display: flex;
-                flex-direction: column;
-            }
-            .video-card:hover {
-                box-shadow: var(--card-hover-shadow);
-                transform: var(--card-hover-transform);
-            }
-            .video-title {
-                text-align: center;
-                padding: 20px;
-                font-weight: 700;
-                font-size: 1.3em;
-                border-bottom: 1px solid var(--border-color);
-                margin-bottom: 0;
-                background: var(--explanation-bg);
-                color: var(--question-header-color);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-            }
-            .video-title svg {
-                width: 24px;
-                height: 24px;
-                fill: currentColor;
-            }
-
-            /* 视频播放器外部包裹 */
-            .video-wrapper {
-                background-color: var(--video-bg);
-                overflow: hidden;
-                margin: 0 auto;
-                max-width: 100%;
-                flex-grow: 1;
-                position: relative;
-            }
-            /* 视频播放器容器 (保持16:9) */
-            .video-container {
-                position: relative;
-                padding-top: 56.25%; /* 16:9 Aspect Ratio */
-                height: 0;
-                overflow: hidden;
-                background-color: #000; /* 视频加载时背景 */
-                border-radius: 0;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-                z-index: 1; /* 确保视频在前面 */
-            }
-            .video-container iframe,
-            .video-container video {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                border: none;
-                object-fit: contain;
-                background-color: #000;
-                z-index: 1;
-            }
-            /* 视频控制栏 */
-            .video-controls {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-                padding: 30px 20px 15px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                opacity: 1; /* 改为默认可见 */
-                transition: opacity 0.3s ease;
-                z-index: 2; /* 确保控制栏在视频上方 */
-            }
-            .video-wrapper:hover .video-controls {
-                opacity: 1;
-            }
-            .video-progress {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                height: 4px;
-                background: rgba(255,255,255,0.2);
-                cursor: pointer;
-                z-index: 3; /* 确保进度条在最上方 */
-            }
-            .video-progress-filled {
-                background: var(--video-button-bg);
-                width: 0;
-                height: 100%;
-                position: absolute;
-                transition: width 0.1s linear;
-            }
-            
-            /* 视频列表区域 */
-            .video-list {
-                background-color: var(--card-bg);
-                border-radius: 20px;
-                overflow: hidden;
-                box-shadow: var(--card-shadow);
-                border: 1px solid var(--border-color);
-                display: flex;
-                flex-direction: column;
-                max-height: 400px;
-                z-index: 1; /* 确保列表在前面 */
-                position: relative; /* 确保z-index生效 */
-            }
-            .video-list-header {
-                padding: 15px 20px;
-                font-weight: 600;
-                font-size: 1.1em;
-                background: var(--explanation-bg);
-                color: var(--question-header-color);
-                border-bottom: 1px solid var(--border-color);
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .video-list-header svg {
-                width: 18px;
-                height: 18px;
-                fill: currentColor;
-            }
-            .video-list-container {
-                overflow-y: auto;
-                padding: 10px;
-                flex-grow: 1;
-                scrollbar-width: thin;
-                scrollbar-color: var(--border-color) transparent;
-            }
-            .video-list-container::-webkit-scrollbar {
-                width: 6px;
-            }
-            .video-list-container::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .video-list-container::-webkit-scrollbar-thumb {
-                background-color: var(--border-color);
-                border-radius: 6px;
-            }
-            
-            /* 视频列表项 */
-            .video-item {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 12px 15px;
-                border-radius: 10px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                margin-bottom: 8px;
-                background: var(--option-bg);
-                border: 1px solid transparent;
-            }
-            .video-item:hover {
-                background: var(--option-hover);
-                transform: translateX(5px);
-            }
-            .video-item.active {
-                background: var(--explanation-bg);
-                border-color: var(--explanation-border);
-                font-weight: 500;
-            }
-            .video-item-thumbnail {
-                width: 80px;
-                height: 45px;
-                background-color: #000;
-                border-radius: 6px;
-                overflow: hidden;
-                flex-shrink: 0;
-                position: relative;
-            }
-            .video-item-thumbnail::before {
-                content: '';
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 0;
-                height: 0;
-                border-style: solid;
-                border-width: 8px 0 8px 16px;
-                border-color: transparent transparent transparent white;
-                z-index: 1;
-                opacity: 0.8;
-            }
-            .video-item-thumbnail::after {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.3);
-            }
-            .video-item.active .video-item-thumbnail::before {
-                border-width: 0 0 0 0;
-                border-style: double;
-                border-color: transparent transparent transparent transparent;
-                width: 12px;
-                height: 12px;
-                background: white;
-            }
-            .video-item-info {
-                flex-grow: 1;
-                overflow: hidden;
-            }
-            .video-item-title {
-                font-size: 0.9em;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                margin-bottom: 4px;
-            }
-            .video-item-duration {
-                font-size: 0.75em;
-                color: var(--button-secondary);
-            }
-            
-            /* 响应式调整 */
-            @media screen and (max-width: 767px) {
-                .video-layout {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    gap: 20px !important;
-                }
-                .video-list {
-                    max-height: 300px !important;
-                }
-            }
-
             /* 返回顶部按钮 */
             .back-to-top {
                 position: fixed;
@@ -661,70 +429,6 @@ def json_to_html(json_data, template_name, video_data=None):
     <body>
     """
     html_output += f"    <h1>{template_name}</h1>"
-
-    # --- 视频处理 - 现代设计 ---
-    if video_data:
-        html_output += "<div class='video-section' style='margin-bottom:50px; opacity:1; display:flex; flex-direction:column; gap:20px;'>"
-        html_output += "<div class='video-layout' style='display:grid; grid-template-columns:70% 30%; gap:20px;'>"
-        
-        # 视频播放器卡片
-        html_output += "<div class='video-card' style='background-color:var(--card-bg); border-radius:20px; overflow:hidden; box-shadow:var(--card-shadow); border:1px solid var(--border-color); display:flex; flex-direction:column;'>"
-        html_output += f"""
-        <div class='video-title' style='text-align:center; padding:20px; font-weight:700; font-size:1.3em; border-bottom:1px solid var(--border-color); margin-bottom:0; background:var(--explanation-bg); color:var(--question-header-color); display:flex; align-items:center; justify-content:center; gap:10px;'>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style='width:24px; height:24px; fill:currentColor;'><path d="M8 5v14l11-7z"/></svg>
-            对点微课视频
-        </div>
-        """
-        html_output += "<div class='video-wrapper' style='background-color:var(--video-bg); overflow:hidden; margin:0 auto; max-width:100%; flex-grow:1; position:relative;'>"
-        first_video_url = video_data[0]['videoUrl']
-        html_output += f"""
-        <div class="video-container" style="position:relative; padding-top:56.25%; height:0; overflow:hidden; background-color:#000; border-radius:0; box-shadow:0 10px 30px rgba(0,0,0,0.1); z-index:1;">
-            <video id="videoPlayer" controls="controls" autoplay="false" preload="auto" src="{first_video_url}" style="display:block !important; visibility:visible !important; width:100% !important; height:100% !important; position:absolute !important; top:0 !important; left:0 !important; object-fit:contain !important; background-color:#000 !important; z-index:10 !important;"></video>
-            <!-- 备用iframe方案 -->
-            <iframe id="videoIframe" src="{first_video_url}" style="display:none; width:100%; height:100%; position:absolute; top:0; left:0; border:none; z-index:9;"></iframe>
-        </div>
-        <div class="video-controls" style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(to top, rgba(0,0,0,0.7), transparent); padding:30px 20px 15px; display:flex; align-items:center; justify-content:space-between; opacity:1; z-index:2;">
-            <div class="video-progress" style="position:absolute; bottom:0; left:0; width:100%; height:4px; background:rgba(255,255,255,0.2); cursor:pointer; z-index:3;">
-                <div class="video-progress-filled" style="background:var(--video-button-bg); width:0; height:100%; position:absolute; transition:width 0.1s linear;"></div>
-            </div>
-        </div>
-        """
-        html_output += "</div>"
-        html_output += "</div>"
-        
-        # 视频列表卡片
-        html_output += "<div class='video-list' style='background-color:var(--card-bg); border-radius:20px; overflow:hidden; box-shadow:var(--card-shadow); border:1px solid var(--border-color); display:flex; flex-direction:column; max-height:400px; z-index:1; position:relative;'>"
-        html_output += f"""
-        <div class='video-list-header' style='padding:15px 20px; font-weight:600; font-size:1.1em; background:var(--explanation-bg); color:var(--question-header-color); border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:8px;'>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style='width:18px; height:18px; fill:currentColor;'><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
-            视频列表
-        </div>
-        """
-        html_output += "<div class='video-list-container' style='overflow-y:auto; padding:10px; flex-grow:1;'>"
-        
-        # 生成视频列表项
-        for index, video in enumerate(video_data):
-            video_name = video['videoName']
-            video_url = video['videoUrl']
-            active_class = " active" if index == 0 else ""
-            # 假设每个视频5分钟，实际项目中可以从视频数据中获取
-            duration = "05:00"
-            
-            html_output += f"""
-            <div class="video-item{active_class}" data-video-url="{video_url}" style="display:flex; align-items:center; gap:12px; padding:12px 15px; border-radius:10px; cursor:pointer; margin-bottom:8px; background:var(--option-bg);">
-                <div class="video-item-thumbnail" style="width:80px; height:45px; background-color:#000; border-radius:6px; flex-shrink:0;"></div>
-                <div class="video-item-info" style="flex-grow:1; overflow:hidden;">
-                    <div class="video-item-title" style="font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{video_name}</div>
-                    <div class="video-item-duration" style="font-size:0.75em;">{duration}</div>
-                </div>
-            </div>
-            """
-        
-        html_output += "</div>"
-        html_output += "</div>"
-        
-        html_output += "</div>"
-        html_output += "</div>"
 
     # --- 题目处理逻辑 ---
     last_parent_id = None
@@ -880,13 +584,12 @@ def json_to_html(json_data, template_name, video_data=None):
                         for option in current_question_data["options"]
                     )
                     if all_options_empty:
-                        html_output += "<ul style='display: flex; justify-content: space-around; list-style-type: none; padding: 10px 0;'>"
+                        html_output += "<ul class='segmentation-options'>"
                         for option in current_question_data["options"]:
                             option_letter = option.get('option', '').strip()
                             is_correct = option_letter in current_answer.replace(',', '').replace(' ', '')
                             css_class = 'correct-option' if is_correct else ''
-                            # 移除背景样式覆盖，使用CSS类中定义的样式
-                            html_output += f"<li class='{css_class}' style='width: auto; margin: 0 5px;'><b>{option_letter}</b></li>"
+                            html_output += f"<li class='{css_class}'><b>{option_letter}</b></li>"
                         html_output += "</ul>"
                     else:
                         html_output += "<ul>"
@@ -942,191 +645,6 @@ def json_to_html(json_data, template_name, video_data=None):
     html_output += """
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 检测视频格式并选择合适的播放方式
-            function detectVideoFormat(url) {
-                // 检查是否是m3u8格式
-                if (url && url.includes('.m3u8')) {
-                    return 'hls';
-                }
-                // 检查是否是mp4格式
-                else if (url && url.includes('.mp4')) {
-                    return 'mp4';
-                }
-                // 其他格式可能需要特殊处理
-                else {
-                    return 'other';
-                }
-            }
-            
-            // 根据视频格式选择播放方式
-            function playVideoByFormat(url, videoPlayer, videoIframe) {
-                const format = detectVideoFormat(url);
-                console.log('检测到视频格式:', format, '视频URL:', url);
-                
-                if (format === 'mp4') {
-                    // MP4格式使用video标签播放
-                    videoPlayer.style.display = 'block';
-                    videoIframe.style.display = 'none';
-                    videoPlayer.src = url;
-                    videoPlayer.load();
-                    return 'video';
-                } else {
-                    // 其他格式使用iframe播放
-                    videoPlayer.style.display = 'none';
-                    videoIframe.style.display = 'block';
-                    videoIframe.src = url;
-                    return 'iframe';
-                }
-            }
-            // --- 现代视频播放器功能 ---
-            const videoPlayer = document.getElementById('videoPlayer');
-            const videoListContainer = document.querySelector('.video-list-container');
-            const videoProgress = document.querySelector('.video-progress');
-            const videoProgressFilled = document.querySelector('.video-progress-filled');
-            
-            // 确保视频元素正确显示
-            if (videoPlayer) {
-                const videoIframe = document.getElementById('videoIframe');
-                
-                // 强制设置视频元素样式
-                videoPlayer.style.display = 'block';
-                videoPlayer.style.visibility = 'visible';
-                videoPlayer.style.width = '100%';
-                videoPlayer.style.height = '100%';
-                videoPlayer.style.position = 'absolute';
-                videoPlayer.style.top = '0';
-                videoPlayer.style.left = '0';
-                videoPlayer.style.zIndex = '10';
-                videoPlayer.style.backgroundColor = '#000';
-                
-                // 根据视频格式选择播放方式
-                if (videoPlayer.src) {
-                    playVideoByFormat(videoPlayer.src, videoPlayer, videoIframe);
-                }
-                
-                // 监听视频加载事件
-                videoPlayer.addEventListener('loadeddata', function() {
-                    console.log('视频已加载');
-                });
-                
-                // 监听视频错误事件
-                videoPlayer.addEventListener('error', function(e) {
-                    console.error('视频加载错误:', e);
-                    // 尝试使用iframe作为备用方案
-                    if (videoIframe && videoPlayer.src) {
-                        console.log('视频加载错误，切换到iframe模式');
-                        videoPlayer.style.display = 'none';
-                        videoIframe.style.display = 'block';
-                        videoIframe.src = videoPlayer.src;
-                    }
-                });
-                
-                // 检查视频是否可以播放
-                setTimeout(() => {
-                    if (videoPlayer.readyState === 0 && videoPlayer.style.display !== 'none') {
-                        console.log('视频未能加载，尝试备用方案');
-                        if (videoIframe && videoPlayer.src) {
-                            videoPlayer.style.display = 'none';
-                            videoIframe.style.display = 'block';
-                            videoIframe.src = videoPlayer.src;
-                        }
-                    }
-                }, 2000);
-            }
-            
-            // 视频列表点击事件
-            if (videoPlayer && videoListContainer) {
-                videoListContainer.addEventListener('click', function(event) {
-                    const videoItem = event.target.closest('.video-item');
-                    if (!videoItem) return;
-                    
-                    const videoUrl = videoItem.getAttribute('data-video-url');
-                    if (videoUrl && videoPlayer.src !== videoUrl) {
-                        const videoIframe = document.getElementById('videoIframe');
-                        
-                        // 根据视频格式选择播放方式
-                        const playerType = playVideoByFormat(videoUrl, videoPlayer, videoIframe);
-                        console.log('切换视频，使用播放器类型:', playerType);
-                        
-                        // 尝试自动播放
-                        setTimeout(() => {
-                            if (playerType === 'video') {
-                                videoPlayer.play().catch(e => {
-                                    console.warn("自动播放失败:", e);
-                                    // 如果播放失败，尝试使用iframe
-                                    if (videoIframe) {
-                                        videoPlayer.style.display = 'none';
-                                        videoIframe.style.display = 'block';
-                                    }
-                                });
-                                
-                                // 检查视频是否可以播放
-                                setTimeout(() => {
-                                    if (videoPlayer.readyState === 0 && videoPlayer.style.display !== 'none') {
-                                        console.log('视频未能加载，尝试备用方案');
-                                        if (videoIframe) {
-                                            videoPlayer.style.display = 'none';
-                                            videoIframe.style.display = 'block';
-                                        }
-                                    }
-                                }, 1000);
-                            }
-                        }, 100);
-                        
-                        // 更新激活状态
-                        videoListContainer.querySelectorAll('.video-item').forEach(item => {
-                            item.classList.remove('active');
-                        });
-                        videoItem.classList.add('active');
-                        
-                        // 滚动到可视区域
-                        videoItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                });
-            }
-            
-            // 视频进度条功能
-            if (videoPlayer && videoProgress && videoProgressFilled) {
-                // 更新进度条
-                videoPlayer.addEventListener('timeupdate', function() {
-                    const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
-                    videoProgressFilled.style.width = `${percent}%`;
-                });
-                
-                // 点击进度条跳转
-                videoProgress.addEventListener('click', function(e) {
-                    const progressTime = (e.offsetX / videoProgress.offsetWidth) * videoPlayer.duration;
-                    videoPlayer.currentTime = progressTime;
-                });
-            }
-            
-            // 视频缩略图预加载（实际项目中可以使用真实缩略图）
-            document.querySelectorAll('.video-item-thumbnail').forEach((thumbnail, index) => {
-                // 这里可以设置真实的缩略图，如果有的话
-                // 示例：thumbnail.style.backgroundImage = `url(${thumbnailUrls[index]})`;
-            });
-            
-            // 视频播放时间格式化函数
-            function formatTime(seconds) {
-                const minutes = Math.floor(seconds / 60);
-                const remainingSeconds = Math.floor(seconds % 60);
-                return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-            }
-            
-            // 如果有视频时长数据，可以在这里设置
-            if (videoPlayer.readyState > 0) {
-                updateVideoDurations();
-            } else {
-                videoPlayer.addEventListener('loadedmetadata', updateVideoDurations);
-            }
-            
-            function updateVideoDurations() {
-                // 实际项目中，这里可以从视频元数据中获取真实时长
-                // 示例代码，实际使用时可能需要调整
-                const duration = formatTime(videoPlayer.duration);
-                document.querySelector('.video-item.active .video-item-duration').textContent = duration;
-            }
-
             // --- 返回顶部按钮功能 ---
             const backToTopButton = document.getElementById('backToTop');
             if (backToTopButton) {
@@ -1153,7 +671,7 @@ def json_to_html(json_data, template_name, video_data=None):
             // --- 卡片悬停效果 (仅非触摸设备) ---
             const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
             if (!isTouchDevice) {
-                document.querySelectorAll('.question, .parent, .video-card').forEach(card => {
+                document.querySelectorAll('.question, .parent').forEach(card => {
                     card.addEventListener('mouseenter', function() {
                         this.style.transform = 'var(--card-hover-transform)';
                         this.style.boxShadow = 'var(--card-hover-shadow)';
