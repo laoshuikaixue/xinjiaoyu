@@ -60,6 +60,68 @@ def check_and_relogin():
         return False
 
 
+def generic_api_request(url, description, identifier=None, retry=True, expect_data=True):
+    """
+    通用API请求函数，统一处理请求、错误处理和重试逻辑
+    
+    Args:
+        url: 请求URL
+        description: 请求描述（用于日志）
+        identifier: 标识符（如模板编号、模板ID等）
+        retry: 是否在失败时尝试重新登录并重试
+        expect_data: 是否期望响应中包含data字段
+        
+    Returns:
+        dict or None: 响应数据或None
+    """
+    try:
+        headers = account_manager.get_dynamic_headers()
+        logger.debug(f"[调试] 发送{description}请求 - 标识符: {identifier}")
+        logger.debug(f"[调试] 请求URL: {url}")
+        
+        response_data = get_content(url, headers)
+        
+        if response_data is None:
+            logger.warning(f"[调试] {description}响应数据为None - 标识符: {identifier}")
+            return None
+            
+        logger.debug(f"[调试] {description}响应: code={response_data.get('code')}, msg={response_data.get('msg')}")
+        
+        # 检查是否获取成功
+        if response_data.get('code') == 200:
+            if expect_data and not response_data.get('data'):
+                logger.warning(f"[调试] {description}成功但data字段为空 - 标识符: {identifier}")
+                return None
+            logger.info(f"[调试] 成功获取{description} - 标识符: {identifier}")
+            return response_data
+            
+        # 检查是否是登录失效
+        elif (response_data.get('code') == 410 or 
+              (isinstance(response_data.get('msg'), str) and '请先登录' in response_data.get('msg'))):
+            logger.warning(f"[调试] 检测到登录失效 - {description}, 标识符: {identifier}")
+            if retry and check_and_relogin():
+                logger.info(f"重新登录成功，重试获取{description}")
+                toast(f"重新登录成功，正在重试获取{description}...", color='info')
+                return generic_api_request(url, description, identifier, False, expect_data)
+            else:
+                logger.error(f"自动重新登录失败 - {description}")
+                toast(f"自动重新登录失败，请检查账号信息", color='error')
+                return None
+        else:
+            logger.warning(f"[调试] 获取{description}失败: 错误码 {response_data.get('code')}, 错误信息: {response_data.get('msg')} - 标识符: {identifier}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"[调试] 获取{description}时发生异常 - 标识符: {identifier}")
+        logger.error(f"[调试] 异常类型: {type(e).__name__}, 异常详情: {str(e)}")
+        
+        if retry and check_and_relogin():
+            logger.info(f"重新登录成功，重试获取{description}")
+            toast(f"重新登录成功，正在重试获取{description}...", color='info')
+            return generic_api_request(url, description, identifier, False, expect_data)
+        return None
+
+
 def get_video_urls(template_code):
     """
     获取微课视频 URLs
@@ -70,20 +132,9 @@ def get_video_urls(template_code):
     Returns:
         dict or None: 视频数据或None
     """
-    video_url_api = (f"{BASE_URL}/api/v3/server_homework/homework/point/videos/list?homeworkId=&templateCode="
-                     f"{template_code}")
-    try:
-        response_data = get_content(video_url_api, account_manager.get_dynamic_headers())
-
-        # 检查是否获取成功
-        if response_data and response_data.get('code') == 200 and response_data.get('data'):
-            return response_data['data']
-        else:
-            logger.warning(f"未获取到微课视频数据, 模板编号: {template_code}")
-            return None
-    except Exception as e:
-        logger.error(f"获取微课视频URL时出错: {e}")
-        return None
+    url = f"{BASE_URL}/api/v3/server_homework/homework/point/videos/list?homeworkId=&templateCode={template_code}"
+    response_data = generic_api_request(url, "微课视频数据", template_code, retry=False, expect_data=True)
+    return response_data['data'] if response_data else None
 
 
 def get_template_data(template_code, retry=True):
@@ -97,84 +148,8 @@ def get_template_data(template_code, retry=True):
     Returns:
         dict or None: 模板数据或None
     """
-    try:
-        # 构建请求URL
-        request_url = f"{BASE_URL}/api/v3/server_homework/homework/template/question/list?templateCode={template_code}&studentId={account_manager.get_studentId()}&isEncrypted=false"
-        request_headers = account_manager.get_dynamic_headers()
-        
-        # 调试信息：记录请求详情
-        logger.debug(f"[调试] 发送模板数据请求 - 模板编号: {template_code}")
-        logger.debug(f"[调试] 请求URL: {request_url}")
-        logger.debug(f"[调试] 请求头信息: {request_headers}")
-        
-        response_data = get_content(request_url, request_headers)
-        
-        # 调试信息：记录响应详情
-        if response_data is None:
-            logger.warning(f"[调试] 响应数据为None - 模板编号: {template_code}")
-            logger.warning(f"[调试] 可能的原因: 网络请求失败、服务器无响应或解析JSON失败")
-        else:
-            logger.debug(f"[调试] 响应数据类型: {type(response_data)}")
-            logger.debug(f"[调试] 响应数据内容: {response_data}")
-            
-            # 详细检查响应结构
-            response_code = response_data.get('code')
-            response_msg = response_data.get('msg')
-            response_data_field = response_data.get('data')
-            
-            logger.debug(f"[调试] 响应code: {response_code}")
-            logger.debug(f"[调试] 响应msg: {response_msg}")
-            logger.debug(f"[调试] 响应data字段类型: {type(response_data_field)}")
-            
-            if response_data_field:
-                logger.debug(f"[调试] 响应data字段内容: {response_data_field}")
-            else:
-                logger.warning(f"[调试] 响应data字段为空或None - 模板编号: {template_code}")
-
-        # 检查是否获取成功
-        if response_data and response_data.get('code') == 200 and response_data.get('data'):
-            logger.info(f"[调试] 成功获取模板数据 - 模板编号: {template_code}")
-            return response_data
-        # 检查是否是登录失效 - code为410或msg包含"请先登录"
-        elif response_data and (
-            response_data.get('code') == 410 or
-            (isinstance(response_data.get('msg'), str) and '请先登录' in response_data.get('msg'))
-        ):
-            logger.warning(f"[调试] 检测到登录失效 - 模板编号: {template_code}, code: {response_data.get('code')}, msg: {response_data.get('msg')}")
-            if retry and check_and_relogin():
-                logger.info("重新登录成功，重试获取模板数据")
-                toast("重新登录成功，正在重试获取数据...", color='info')
-                return get_template_data(template_code, False)  # 重试一次，防止无限循环
-            else:
-                logger.error("自动重新登录失败，请检查账号信息")
-                toast("自动重新登录失败，请检查账号信息", color='error')
-                return None
-        else:
-            # 详细记录失败原因
-            if response_data is None:
-                logger.warning(f"[调试] 获取模板数据失败: 响应数据为None - 模板编号: {template_code}")
-            elif response_data.get('code') != 200:
-                logger.warning(f"[调试] 获取模板数据失败: 错误码 {response_data.get('code')}, 错误信息: {response_data.get('msg')} - 模板编号: {template_code}")
-            elif not response_data.get('data'):
-                logger.warning(f"[调试] 获取模板数据失败: data字段为空 - 模板编号: {template_code}")
-            else:
-                logger.warning(f"[调试] 获取模板数据失败: 未知原因 - 模板编号: {template_code}")
-            
-            logger.warning(f"未获取到有效模板数据, 模板编号: {template_code}")
-            return None
-    except Exception as e:
-        logger.error(f"[调试] 获取模板数据时发生异常 - 模板编号: {template_code}")
-        logger.error(f"[调试] 异常类型: {type(e).__name__}")
-        logger.error(f"[调试] 异常详情: {str(e)}")
-        import traceback
-        logger.error(f"[调试] 异常堆栈: {traceback.format_exc()}")
-
-        # 如果是网络错误或其他异常，也尝试重新登录
-        if retry and check_and_relogin():
-            logger.info("重新登录成功，重试获取模板数据")
-            toast("重新登录成功，正在重试获取数据...", color='info')
-            return get_template_data(template_code, False)  # 重试一次，防止无限循环
-        return None
+    url = f"{BASE_URL}/api/v3/server_homework/homework/template/question/list?templateCode={template_code}&studentId={account_manager.get_studentId()}&isEncrypted=false"
+    return generic_api_request(url, "模板数据", template_code, retry, expect_data=True)
 
 
 def get_homework_answers(template_id, retry=True):
@@ -188,30 +163,8 @@ def get_homework_answers(template_id, retry=True):
     Returns:
         dict or None: 答案数据或None
     """
-    try:
-        homework_response = get_content(
-            f"{BASE_URL}/api/v3/server_homework/homework/answer/sheet/student/questions/answer?templateId="
-            f"{template_id}",
-            account_manager.get_dynamic_headers(),
-            False
-        )
-
-        # 检查是否获取成功
-        if homework_response and homework_response.get('code') == 200:
-            return homework_response
-        # 检查是否是登录失效 - 根据用户提供的信息，登录失效时code为410且msg为"请先登录！
-        else:
-            logger.warning(f"未获取到有效答案数据, 模板ID: {template_id}")
-            return None
-    except Exception as e:
-        logger.error(f"获取答案数据时出错: {e}")
-
-        # 如果是网络错误或其他异常，也尝试重新登录
-        if retry and check_and_relogin():
-            logger.info("重新登录成功，重试获取答案数据")
-            toast("重新登录成功，正在重试获取数据...", color='info')
-            return get_homework_answers(template_id, False)  # 重试一次，防止无限循环
-        return None
+    url = f"{BASE_URL}/api/v3/server_homework/homework/answer/sheet/student/questions/answer?templateId={template_id}"
+    return generic_api_request(url, "作业答案数据", template_id, retry, expect_data=False)
 
 
 def main():
