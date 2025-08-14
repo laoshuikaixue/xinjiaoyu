@@ -3,7 +3,7 @@ import os
 import time
 import uuid
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Dict
 
 import jwt
 import requests
@@ -25,6 +25,8 @@ class AccountManager:
         self.public_user_data = {}
         self.HEADERS = {}
         self.studentId = {}
+        self.safe_code = None
+        self.client_session_id = None
         self.load_user_data()
 
     def save_user_data(self, data: dict) -> None:
@@ -81,6 +83,12 @@ class AccountManager:
                 self.public_user_data = data.get("tokens", {})
                 self.HEADERS = data.get("headers", {})
                 self.studentId = data.get("user_info", {}).get("school", {}).get("studentId", {})
+                
+                # 恢复保存的clientSession和safeCode
+                session_data = data.get("session_data", {})
+                self.client_session_id = session_data.get("client_session_id")
+                self.safe_code = session_data.get("safe_code")
+                
             logger.info("用户数据加载成功")
         except Exception as e:
             logger.error(f"加载用户数据失败: {e}")
@@ -175,9 +183,76 @@ class AccountManager:
         return False
 
     def check_current_account_valid(self):
-        url = "https://www.xinjiaoyu.com/api/v3/server_questions/category/tree/list"
-        response = get_content(url, self.get_headers(), False, False)
-        return response.get("code") == 200
+        """检查当前账户是否有效（使用动态加密）"""
+        try:
+            # 准备动态加密头部
+            headers = self._prepare_dynamic_headers()
+            if not headers:
+                return False
+                
+            # 添加认证信息
+            if self.public_user_data.get("token") and self.public_user_data.get("accessToken"):
+                headers.update({
+                    "authorization": f"JBY {self.public_user_data['token']}",
+                    "accesstoken": self.public_user_data["accessToken"]
+                })
+            
+            url = "https://www.xinjiaoyu.com/api/v3/server_system/member/user/vip"
+            response = get_content(url, headers, False, False)
+            return response.get("code") == 200
+            
+        except Exception as e:
+            logger.error(f"检查账户有效性时发生错误: {e}")
+            return False
+    
+    def _prepare_dynamic_headers(self) -> Optional[Dict[str, str]]:
+        """准备动态加密的请求头部"""
+        try:
+            # 如果没有客户端会话ID，生成一个新的
+            if not self.client_session_id:
+                self.client_session_id = XinjiaoyuEncryptioner.generate_client_session_id() if hasattr(XinjiaoyuEncryptioner, 'generate_client_session_id') else uuid.uuid4().hex
+            
+            # 如果没有SafeCode，获取一个新的
+            if not self.safe_code and hasattr(XinjiaoyuEncryptioner, 'get_safe_code'):
+                self.safe_code = XinjiaoyuEncryptioner.get_safe_code(self.client_session_id)
+                if not self.safe_code:
+                    logger.warning("无法获取SafeCode，使用旧版加密")
+                    return self.get_headers()
+            
+            # 生成动态加密头部
+            timestamp = int(time.time() * 1000)
+            if hasattr(XinjiaoyuEncryptioner, 'get_dynamic_encrypt') and self.safe_code:
+                encrypt_val = XinjiaoyuEncryptioner.get_dynamic_encrypt(
+                    self.safe_code, timestamp, self.client_session_id, "applet"
+                )
+            else:
+                encrypt_val = XinjiaoyuEncryptioner.get_md5(str(timestamp), self.client_session_id)
+            
+            headers = {
+                "encrypt": encrypt_val,
+                "xweb_xhr": "1",
+                "clientsession": self.client_session_id,
+                "client": "applet",
+                "app": "student",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf2540621) XWEB/16203",
+                "t": str(timestamp)
+            }
+            
+            return headers
+            
+        except Exception as e:
+            logger.error(f"准备动态头部时发生错误: {e}")
+            return self.get_headers()
+    
+    def get_dynamic_headers(self) -> Optional[Dict[str, str]]:
+        """获取动态加密的请求头部（供外部调用）"""
+        headers = self._prepare_dynamic_headers()
+        if headers and self.public_user_data.get("token") and self.public_user_data.get("accessToken"):
+            headers.update({
+                "authorization": f"JBY {self.public_user_data['token']}",
+                "accesstoken": self.public_user_data["accessToken"]
+            })
+        return headers
 
     @staticmethod
     def _log_remaining_time(remaining_time: int) -> None:
@@ -192,24 +267,61 @@ class AccountManager:
         """对数据进行加密"""
         return XinjiaoyuEncryptioner.encrypt(data, self.ENCRYPTION_KEY)
 
-    @staticmethod
-    def _prepare_login_request(username: str, password: str) -> tuple[dict, dict]:
-        """准备登录请求所需数据"""
-        t_val = str(int(time.time() * 1000))
-        client_session_val = uuid.uuid4().hex
-        encrypt_val = XinjiaoyuEncryptioner.get_md5(t_val, client_session_val)
+    def _prepare_login_request(self, username: str, password: str) -> tuple[dict, dict]:
+        """准备登录请求所需数据（使用动态加密）"""
+        # 生成客户端会话ID
+        self.client_session_id = XinjiaoyuEncryptioner.generate_client_session_id() if hasattr(XinjiaoyuEncryptioner, 'generate_client_session_id') else uuid.uuid4().hex
+        
+        # 获取SafeCode
+        if hasattr(XinjiaoyuEncryptioner, 'get_safe_code'):
+            self.safe_code = XinjiaoyuEncryptioner.get_safe_code(self.client_session_id)
+        else:
+            self.safe_code = None
+            
+        if not self.safe_code:
+            logger.warning("无法获取SafeCode，使用旧版加密方式")
+            # 回退到旧版加密方式
+            t_val = str(int(time.time() * 1000))
+            client_session_val = uuid.uuid4().hex
+            encrypt_val = XinjiaoyuEncryptioner.get_md5(t_val, client_session_val)
+            headers = {
+                'Content-Type': "application/json",
+                'accesstoken': "",
+                'authorization': "",
+                'encrypt': encrypt_val,
+                'xweb_xhr': "1",
+                'clientsession': client_session_val,
+                'client': "applet",
+                'app': "student",
+                'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf2540621) XWEB/16203",
+                't': t_val
+            }
+            login_data = {"username": username, "password": password, "t": int(t_val)}
+            return headers, login_data
+        
+        # 使用动态加密
+        timestamp = int(time.time() * 1000)
+        if hasattr(XinjiaoyuEncryptioner, 'get_dynamic_encrypt'):
+            encrypt_val = XinjiaoyuEncryptioner.get_dynamic_encrypt(
+                self.safe_code, timestamp, self.client_session_id, "applet"
+            )
+        else:
+            encrypt_val = XinjiaoyuEncryptioner.get_md5(str(timestamp), self.client_session_id)
+        
         headers = {
             'Content-Type': "application/json",
             'accesstoken': "",
             'authorization': "",
-            'client': "applet",
-            'xweb_xhr': "1",
-            'clientsession': client_session_val,
             'encrypt': encrypt_val,
-            't': t_val,
+            'xweb_xhr': "1",
+            'clientsession': self.client_session_id,
+            'client': "applet",
             'app': "student",
+            'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781(0x6700143B) NetType/WIFI MiniProgramEnv/Windows WindowsWechat/WMPF WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf2540621) XWEB/16203",
+            't': str(timestamp)
         }
-        login_data = {"username": username, "password": password, "t": int(t_val)}
+        
+        login_data = {"username": username, "password": password, "t": timestamp}
         return headers, login_data
 
     def _process_login_response(self, response: dict, headers: dict) -> None:
@@ -219,11 +331,23 @@ class AccountManager:
         self.public_user_data = {"accessToken": tokens.get("accessToken"), "token": tokens.get("token")}
         self.HEADERS.update(headers)
         self.HEADERS.update({
-            "Authorization": f'JBY {self.public_user_data["token"]}',
-            "accessToken": self.public_user_data["accessToken"],
+            "authorization": f'JBY {self.public_user_data["token"]}',
+            "accesstoken": self.public_user_data["accessToken"],
         })
         self.studentId = self.user_data.get("school", {}).get("studentId", {})
-        self.save_user_data({"user_info": self.user_data, "tokens": self.public_user_data, "headers": self.HEADERS})
+        
+        # 保存clientSession和safeCode到用户数据中，确保后续请求时能够重用
+        session_data = {
+            "client_session_id": self.client_session_id,
+            "safe_code": self.safe_code
+        }
+        
+        self.save_user_data({
+            "user_info": self.user_data, 
+            "tokens": self.public_user_data, 
+            "headers": self.HEADERS,
+            "session_data": session_data
+        })
 
     def get_headers(self) -> dict | None:
         """
