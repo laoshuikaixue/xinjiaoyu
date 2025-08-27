@@ -40,7 +40,7 @@ pip install -r requirements.txt
 > - 注意：由于设计原因，当前实现需要先通过提交作业接口获取templateCode对应的paperID，因此只能在允许提交作业的时间段内，并且你选修了该门学科的情况下才能获取paperID进行解析
 
 ### 4. 运行程序
-运行 `main.py` 文件，打开提示的网站地址，访问并提交解码后的二维码内容即可。
+运行 `main.py` 文件，打开提示的网站地址，访问并提交解码后的题卡二维码内容即可。
 
 ## 许可协议
 
@@ -121,7 +121,7 @@ flowchart TD
     RR --> YY
     YY --> H
     
-    subgraph "简化的请求处理"
+    subgraph "请求处理"
         ZZ[generic_api_request通用函数]
         ZZ --> AAA[统一错误处理]
         ZZ --> BBB[统一重试逻辑]
