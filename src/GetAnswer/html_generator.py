@@ -455,7 +455,7 @@ def json_to_html(json_data, template_name, video_data=None):
                     try:
                         fetch_parent_content = get_content(
                             f"{BASE_URL}/api/v3/server_questions/questions/{current_parent_id}",
-                            account_manager.get_headers())
+                            account_manager.get_dynamic_headers())
                         parent_content = fetch_parent_content.get('data', {}).get('content', '')
                         if parent_content:
                             html_output += f"<div class='parent'><p><b>题干: </b>{parent_content}</p>"
