@@ -12,10 +12,7 @@
 ![界面截图2](https://github.com/user-attachments/assets/e76a3029-935e-40cd-9140-9665a633d51a)
 ![界面截图3](https://github.com/user-attachments/assets/65b39489-48d3-4ca9-9bbe-068a85c0ab04)
 
-该目录包含基于 PyWebIO 的工具，用于生成作业（智能题卡）答案的 HTML 页面。生成的 HTML 文件可以用于部署静态网站。
-
-**生成效果示例网站：**
-- https://xinjiaoyu.laoshui.top/
+该目录包含基于 PyWebIO 的工具，用于生成步步高、创新设计作业本等所有有智能题卡答案的 HTML 页面。生成的 HTML 文件可以用于部署静态网站。
 
 ## 使用指南
 
@@ -40,7 +37,7 @@ pip install -r requirements.txt
 > - 注意：由于设计原因，当前实现需要先通过提交作业接口获取templateCode对应的paperID，因此只能在允许提交作业的时间段内，并且你选修了该门学科的情况下才能获取paperID进行解析
 
 ### 4. 运行程序
-运行 `main.py` 文件，打开提示的网站地址，访问并提交解码后的题卡二维码内容即可。
+运行 `main.py` 文件，打开提示的网站地址，访问并提交解码后的题卡二维码内容或作业ID即可。
 
 ## 许可协议
 
