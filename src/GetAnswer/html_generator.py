@@ -32,6 +32,7 @@ def json_to_html(json_data, template_name, video_data=None):
     <html>
     <head>
         <meta charset='utf-8'>
+        <meta name="referrer" content="no-referrer">
     """
     html_output += f"    <title>{template_name} | LaoShui</title>"
     html_output += """
@@ -638,7 +639,7 @@ def json_to_html(json_data, template_name, video_data=None):
     """
     html_output += """
     <div class="footer">
-    <p>GitHub: <a href="https://github.com/laoshuikaixue/xinjiaoyu" target="_blank" rel="noopener noreferrer">https://github.com/laoshuikaixue/xinjiaoyu</a><br>
+    <p>Powered By LaoShui @ 2025 | <a href="https://github.com/laoshuikaixue/xinjiaoyu" target="_blank" rel="noopener noreferrer">Github</a><br>
     温馨提示：仅供学习使用，请勿直接抄袭答案。</p>
     </div>
     """
