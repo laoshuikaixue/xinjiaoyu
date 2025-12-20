@@ -1,14 +1,15 @@
 import re
+
+from loguru import logger
 from pywebio.output import put_text
+
 from src.GetAnswer.AccountManager import AccountManager
 from src.GetAnswer.api_client import get_content
 from src.GetAnswer.config import BASE_URL
-from loguru import logger
-
-account_manager = AccountManager()
 
 
 def json_to_html(json_data, template_name, video_data=None):
+    account_manager = AccountManager()
     """
     将JSON格式的作业数据转换为HTML页面。
     对内容、解析、答案都相同的连续小问进行合并显示，合并后的题目仅显示主题号。
