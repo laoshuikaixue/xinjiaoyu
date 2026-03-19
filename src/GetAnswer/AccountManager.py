@@ -10,7 +10,7 @@ import requests
 from loguru import logger
 
 from src.GetAnswer.XinjiaoyuEncryptioner import XinjiaoyuEncryptioner
-from src.GetAnswer.api_client import get_content
+from src.GetAnswer.api_client import get_content, save_debug_http_record
 from src.GetAnswer.config import BASE_URL
 
 
@@ -372,9 +372,37 @@ class AccountManager:
                 response = requests.post(url, headers=headers, json=json_data, timeout=10)
                 if response.ok:
                     logger.info(f"请求成功 (尝试 {attempt}/{self.MAX_RETRIES})")
-                    return response.json()
+                    response_json = response.json()
+                    save_debug_http_record(
+                        method="POST",
+                        url=url,
+                        request_headers=headers,
+                        request_json=json_data,
+                        status_code=response.status_code,
+                        response_headers=response.headers,
+                        response_text=response.text,
+                        response_json=response_json
+                    )
+                    return response_json
+                save_debug_http_record(
+                    method="POST",
+                    url=url,
+                    request_headers=headers,
+                    request_json=json_data,
+                    status_code=response.status_code,
+                    response_headers=response.headers,
+                    response_text=response.text
+                )
                 logger.error(f"请求失败 (尝试 {attempt}/{self.MAX_RETRIES}): {response.text}")
             except requests.RequestException as e:
+                save_debug_http_record(
+                    method="POST",
+                    url=url,
+                    request_headers=headers,
+                    request_json=json_data,
+                    error_type=type(e).__name__,
+                    error_message=str(e)
+                )
                 logger.error(f"网络错误 (尝试 {attempt}/{self.MAX_RETRIES}): {e}")
             time.sleep(1)
         logger.error("达到最大重试次数，请求失败")

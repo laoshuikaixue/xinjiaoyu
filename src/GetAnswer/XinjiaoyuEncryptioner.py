@@ -8,6 +8,7 @@ import requests
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from loguru import logger
+from src.GetAnswer.api_client import save_debug_http_record
 
 
 class XinjiaoyuEncryptioner:
@@ -21,7 +22,7 @@ class XinjiaoyuEncryptioner:
             encrypted = cipher.encrypt(pad(raw_text.encode('utf-8'), AES.block_size))
             return base64.b64encode(encrypted).decode('utf-8')
         except Exception as e:
-            raise ValueError(f"Encryption failed: {e}")
+            raise ValueError(f"加密失败: {e}")
 
     @staticmethod
     def decrypt(encrypted_text: str, key: str) -> str:
@@ -33,7 +34,7 @@ class XinjiaoyuEncryptioner:
             decrypted = unpad(cipher.decrypt(base64.b64decode(encrypted_text)), AES.block_size)
             return decrypted.decode('utf-8')
         except Exception as e:
-            raise ValueError(f"Decryption failed: {e}")
+            raise ValueError(f"解密失败: {e}")
 
     @staticmethod
     def get_md5(t_value: str, client_session_value: str) -> str:
@@ -49,16 +50,14 @@ class XinjiaoyuEncryptioner:
         生成动态加密字符串
         """
         try:
-            # 使用ENCRYPTION_KEY对safe_code进行AES解密
             ENCRYPTION_KEY = "6f0c5ba452b24fa28989e9524d77407a"
             decrypted_safe_code = XinjiaoyuEncryptioner.decrypt(safe_code, ENCRYPTION_KEY)
             
-            # 使用解密后的safe_code生成MD5哈希
             raw_data = decrypted_safe_code + str(timestamp) + client_session_id + client
             return hashlib.md5(raw_data.encode('utf-8')).hexdigest()
         except Exception as e:
             logger.error(f"生成动态加密字符串失败: {e}")
-            raise ValueError(f"Failed to generate dynamic encrypt: {e}")
+            raise ValueError(f"生成动态加密字符串失败: {e}")
     
     @staticmethod
     def generate_client_session_id() -> str:
@@ -73,8 +72,6 @@ class XinjiaoyuEncryptioner:
         for i in range(10):
             t = str(t) + chars[random.randint(0, len(chars) - 1)]
 
-        # 小程序使用的应该是uuid.uuid4().hex 这里是网页端JS的实现方式 但也可以使用
-        
         return str(t)
     
     @staticmethod
@@ -93,7 +90,7 @@ class XinjiaoyuEncryptioner:
                 "client": client
             }
             
-            # 生成encrypt参数
+            # 生成加密参数
             encrypt_data = client + client_session_id + str(timestamp)
             params["encrypt"] = hashlib.md5(encrypt_data.encode('utf-8')).hexdigest()
             
@@ -103,6 +100,15 @@ class XinjiaoyuEncryptioner:
             
             if response.status_code == 200:
                 result = response.json()
+                save_debug_http_record(
+                    method="GET",
+                    url=response.url,
+                    request_params=params,
+                    status_code=response.status_code,
+                    response_headers=response.headers,
+                    response_text=response.text,
+                    response_json=result
+                )
                 if result.get("code") == 200:
                     safe_code = result.get("data")
                     logger.info("SafeCode获取成功")
@@ -110,9 +116,27 @@ class XinjiaoyuEncryptioner:
                 else:
                     logger.error(f"获取SafeCode失败: {result.get('msg', '未知错误')}")
             else:
+                save_debug_http_record(
+                    method="GET",
+                    url=response.url,
+                    request_params=params,
+                    status_code=response.status_code,
+                    response_headers=response.headers,
+                    response_text=response.text
+                )
                 logger.error(f"请求SafeCode失败，状态码: {response.status_code}")
                 
         except Exception as e:
+            save_debug_http_record(
+                method="GET",
+                url=f"{base_url}/api/v3/server_system/system/code",
+                request_params={
+                    "clientSessionId": client_session_id,
+                    "client": "applet"
+                },
+                error_type=type(e).__name__,
+                error_message=str(e)
+            )
             logger.error(f"获取SafeCode时发生错误: {e}")
             
         return None

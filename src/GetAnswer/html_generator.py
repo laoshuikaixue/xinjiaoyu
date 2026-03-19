@@ -8,6 +8,88 @@ from src.GetAnswer.api_client import get_content
 from src.GetAnswer.config import BASE_URL
 
 
+def normalize_html_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return "".join(str(item) for item in value if item is not None)
+    if isinstance(value, dict):
+        if "content" in value:
+            return str(value.get("content") or "")
+        return str(value)
+    return str(value)
+
+
+def get_normalized_options(question_data):
+    options = question_data.get("options")
+    if isinstance(options, list) and options:
+        normalized_options = []
+        for option in options:
+            if isinstance(option, dict):
+                normalized_options.append({
+                    "option": str(option.get("option", "")).strip(),
+                    "optionContent": normalize_html_value(option.get("optionContent"))
+                })
+            else:
+                normalized_options.append({
+                    "option": "",
+                    "optionContent": normalize_html_value(option)
+                })
+        return normalized_options
+
+    options_list = question_data.get("optionsList")
+    if isinstance(options_list, list) and options_list:
+        normalized_options = []
+        for index, option in enumerate(options_list):
+            default_letter = chr(ord('A') + index)
+            if isinstance(option, dict):
+                option_content = option.get("optionContent")
+                if option_content is None:
+                    option_content = option.get("content")
+                if option_content is None:
+                    option_content = option.get("text")
+                option_letter = str(option.get("option", default_letter)).strip() or default_letter
+            else:
+                option_content = option
+                option_letter = default_letter
+            normalized_options.append({
+                "option": option_letter,
+                "optionContent": normalize_html_value(option_content)
+            })
+        return normalized_options
+
+    return []
+
+
+def normalize_answer_letters(answer):
+    answer_text = normalize_html_value(answer).upper()
+    return re.sub(r"[^A-Z]", "", answer_text)
+
+
+def parse_question_group_info(question_number):
+    question_text = normalize_html_value(question_number).strip()
+    pattern_with_prefix = re.match(r'^第\s*([^\(\)（）题]+)[（(](\d+)[)）]题?\s*(.*)$', question_text)
+    pattern_without_prefix = re.match(r'^([^\(\)（）题]+)[（(](\d+)[)）]题?\s*(.*)$', question_text)
+    match = pattern_with_prefix if pattern_with_prefix else pattern_without_prefix
+    if not match:
+        return None
+
+    main_number = match.group(1).strip()
+    sub_number = int(match.group(2))
+    suffix = match.group(3).strip()
+    normalized_suffix = re.sub(r"\s+", "", suffix)
+    display_number = f"第{main_number}题" if not suffix else f"第{main_number}题 {suffix}"
+    group_key = f"{main_number}|{normalized_suffix}"
+    return {"group_key": group_key, "sub_number": sub_number, "display_number": display_number}
+
+
+def format_question_number(question_number):
+    question_text = normalize_html_value(question_number).strip()
+    if question_text.startswith("第") and "题" in question_text:
+        return question_text
+    return f"第{question_text}题"
+
+
 def json_to_html(json_data, template_name, video_data=None):
     account_manager = AccountManager()
     """
@@ -28,7 +110,7 @@ def json_to_html(json_data, template_name, video_data=None):
         put_text("无效的作业数据，无法生成页面。")
         return ""
 
-    # --- HTML头部和CSS样式 ---
+    # --- 页面头部与样式 ---
     html_output = """
     <html>
     <head>
@@ -476,59 +558,55 @@ def json_to_html(json_data, template_name, video_data=None):
             # --- 提取当前题目信息 ---
             current_question_number = current_question_data.get('questionNumber', '未知')
             current_content = str(current_question_data.get('content', ''))
-            current_explanation = current_question_data.get('answerExplanation')
-            current_answer = str(current_question_data.get('answer', '')).strip()
+            current_explanation = normalize_html_value(current_question_data.get('answerExplanation'))
+            current_answer = normalize_html_value(current_question_data.get('answer')).strip()
+            current_options = get_normalized_options(current_question_data)
+            current_answer_letters = normalize_answer_letters(current_answer)
 
             # --- 尝试分组 ---
-            is_groupable_type = "options" not in current_question_data or not current_question_data['options']
-            match_current = re.match(r'(\d+)\((\d+)\)', str(current_question_number))
+            is_groupable_type = not current_options
+            current_group_info = parse_question_group_info(current_question_number)
 
             group_end_index = i
-            start_sub_num = -1  # 用于记录起始小问号，即使不显示范围，也用于判断是否成功分组
-            main_num_str = ""  # 用于存储主题号
+            start_sub_num = -1
+            display_group_number = ""
+            current_group_key = ""
 
-            if is_groupable_type and match_current:
-                main_num_str = match_current.group(1)  # 获取主题号
-                try:
-                    start_sub_num = int(match_current.group(2))  # 尝试获取起始小问号
+            if is_groupable_type and current_group_info:
+                start_sub_num = current_group_info["sub_number"]
+                display_group_number = current_group_info["display_number"]
+                current_group_key = current_group_info["group_key"]
 
-                    j = i + 1
-                    while j < len(data):
-                        next_item = data[j]
-                        next_question_data = next_item["question"]
-                        next_question_number = next_question_data.get('questionNumber', '')
-                        next_content = str(next_question_data.get('content', ''))
-                        next_explanation = next_question_data.get('answerExplanation')
-                        next_answer = str(next_question_data.get('answer', '')).strip()
-                        next_is_groupable = "options" not in next_question_data or not next_question_data['options']
-                        match_next = re.match(r'(\d+)\((\d+)\)', str(next_question_number))
+                j = i + 1
+                while j < len(data):
+                    next_item = data[j]
+                    next_question_data = next_item["question"]
+                    next_question_number = next_question_data.get('questionNumber', '')
+                    next_content = str(next_question_data.get('content', ''))
+                    next_explanation = normalize_html_value(next_question_data.get('answerExplanation'))
+                    next_answer = normalize_html_value(next_question_data.get('answer')).strip()
+                    next_options = get_normalized_options(next_question_data)
+                    next_is_groupable = not next_options
+                    next_group_info = parse_question_group_info(next_question_number)
 
-                        # 检查合并条件
-                        if (next_is_groupable and match_next and
-                                match_next.group(1) == main_num_str and  # 主题号相同
-                                next_content == current_content and
-                                next_explanation == current_explanation and
-                                next_answer == current_answer):
-                            try:
-                                # 仍然需要解析下一个小问号以确认分组，但不用于显示
-                                int(match_next.group(2))
-                                group_end_index = j  # 更新分组结束索引
-                                j += 1
-                            except ValueError:
-                                break  # 下一个小问号格式不对，停止分组
-                        else:
-                            break  # 条件不满足，停止查找
-                except ValueError:
-                    logger.warning(f"无法解析当前小问号: {current_question_number}，不进行分组。")
-                    start_sub_num = -1  # 标记分组尝试失败
+                    if (
+                        next_is_groupable and
+                        next_group_info and
+                        next_group_info["group_key"] == current_group_key and
+                        next_content == current_content and
+                        next_explanation == current_explanation and
+                        next_answer == current_answer
+                    ):
+                        group_end_index = j
+                        j += 1
+                    else:
+                        break
 
-            # --- 根据是否分组成功生成HTML ---
-            # 条件: group_end_index > i (至少合并了两个题目) 且 start_sub_num != -1 (第一个题目格式正确)
+            # --- 根据是否分组成功生成页面 ---
             if group_end_index > i and start_sub_num != -1:
                 # --- 生成合并后的题目 (仅显示主题号) ---
-                display_question_number_str = main_num_str  # 直接使用主题号
                 logger.info(
-                    f"主题号 {main_num_str} 下的多个小问内容、解析和答案均相同，合并显示为 第{display_question_number_str}题。")
+                    f"{display_group_number} 下的多个小问内容、解析和答案均相同，已合并显示。")
 
                 # 获取元数据 (从第一个题目获取)
                 group_type_name = current_question_data.get('typeName', '未知类型')
@@ -536,13 +614,13 @@ def json_to_html(json_data, template_name, video_data=None):
                 group_difficulty_name = current_question_data.get('difficultyName', '未知难度')
 
                 # 构建合并后的题目标题 (仅用主题号)
-                header_parts = [f"第{display_question_number_str}题", f"({group_type_name})"]
+                header_parts = [display_group_number, f"({group_type_name})"]
                 if group_type_detail_name and group_type_name != group_type_detail_name:
                     header_parts.append(f"- {group_type_detail_name}")
                 header_parts.append(f"难度 - {group_difficulty_name}")
                 header = f"{' '.join(header_parts)} ："
 
-                # 生成合并后的HTML块
+                # 生成合并后的题目块
                 html_output += f"<div class='question' style='--index: {i};'><div class='question-header'>{header}</div>"
                 html_output += f"<p>{current_content}</p>"
                 html_output += f"<p><b>答案: </b><span class='fill-blank-answer'>{current_answer}</span></p>"
@@ -568,37 +646,37 @@ def json_to_html(json_data, template_name, video_data=None):
                 single_type_detail_name = current_question_data.get('typeDetailName', '')
                 single_difficulty_name = current_question_data.get('difficultyName', '未知难度')
 
-                # 构建单个题目的标题 (使用原始题号 current_question_number)
-                header_parts_single = [f"第{current_question_number}题", f"({single_type_name})"]
+                # 构建单个题目的标题（使用原始题号）
+                header_parts_single = [format_question_number(current_question_number), f"({single_type_name})"]
                 if single_type_detail_name and single_type_name != single_type_detail_name:
                     header_parts_single.append(f"- {single_type_detail_name}")
                 header_parts_single.append(f"难度 - {single_difficulty_name}")
                 header_single = f"{' '.join(header_parts_single)} ："
 
-                # 生成单个题目的HTML块
+                # 生成单个题目的内容块
                 html_output += f"<div class='question' style='--index: {i};'><div class='question-header'>{header_single}</div>"
                 html_output += f"<p>{current_content}</p>"
 
                 # 处理选项或答案
-                if "options" in current_question_data and current_question_data['options']:
+                if current_options:
                     all_options_empty = all(
                         option.get('optionContent') is None or str(option.get('optionContent', '')).strip() == ''
-                        for option in current_question_data["options"]
+                        for option in current_options
                     )
                     if all_options_empty:
                         html_output += "<ul class='segmentation-options'>"
-                        for option in current_question_data["options"]:
+                        for option in current_options:
                             option_letter = option.get('option', '').strip()
-                            is_correct = option_letter in current_answer.replace(',', '').replace(' ', '')
+                            is_correct = option_letter.upper() in current_answer_letters
                             css_class = 'correct-option' if is_correct else ''
                             html_output += f"<li class='{css_class}'><b>{option_letter}</b></li>"
                         html_output += "</ul>"
                     else:
                         html_output += "<ul>"
-                        for option in current_question_data["options"]:
+                        for option in current_options:
                             option_letter = option.get('option', '').strip()
                             option_content = option.get('optionContent', '')
-                            is_correct = option_letter in current_answer.replace(',', '').replace(' ', '')
+                            is_correct = option_letter.upper() in current_answer_letters
                             css_class = 'correct-option' if is_correct else ''
                             html_output += f"<li class='{css_class}'><b>{option_letter}:</b> {option_content}</li>"
                         html_output += "</ul>"
@@ -627,7 +705,7 @@ def json_to_html(json_data, template_name, video_data=None):
         logger.error(f"生成HTML时发生未预料的错误: {e}", exc_info=True)
         put_text(f"生成HTML时出错: {e}")
 
-    # --- HTML收尾和JS ---
+    # --- 页面收尾与脚本 ---
     if last_parent_id:
         html_output += "</div><hr>"
 
@@ -664,7 +742,7 @@ def json_to_html(json_data, template_name, video_data=None):
                     clearTimeout(scrollTimeout);
                     scrollTimeout = setTimeout(toggleBackToTopButton, 100);
                 }, { passive: true });
-                toggleBackToTopButton(); // Initial check
+                toggleBackToTopButton(); // 初始化检查
                 backToTopButton.addEventListener('click', () => {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
@@ -685,7 +763,7 @@ def json_to_html(json_data, template_name, video_data=None):
                 });
             }
 
-            // --- 题目加载动画 (Intersection Observer) ---
+            // --- 题目加载动画（交叉观察器） ---
             if ('IntersectionObserver' in window) {
                 const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
                 const intersectionCallback = (entries, observer) => {
@@ -705,7 +783,7 @@ def json_to_html(json_data, template_name, video_data=None):
                 };
                 const questionObserver = new IntersectionObserver(intersectionCallback, observerOptions);
                 document.querySelectorAll('.question').forEach(question => {
-                    // Initial styles are set in CSS (opacity: 0, transform: translateY(20px))
+                    // 初始样式已在样式表中设置
                     questionObserver.observe(question);
                 });
             } else {
@@ -716,12 +794,12 @@ def json_to_html(json_data, template_name, video_data=None):
                 });
             }
 
-            // --- MathJax 排版 ---
+            // --- 数学公式排版 ---
              if (typeof MathJax !== 'undefined') {
-                 // Delay typesetting slightly to allow elements to become visible
+                 // 稍作延迟，确保元素可见后再排版
                  setTimeout(() => {
                       MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-                 }, 100); // Adjust delay if needed
+                 }, 100); // 如有需要可调整延迟
              }
         });
     </script>
