@@ -718,7 +718,7 @@ def json_to_html(json_data, template_name, video_data=None):
     """
     html_output += """
     <div class="footer">
-    <p>Powered By LaoShui @ 2025 | <a href="https://github.com/laoshuikaixue/xinjiaoyu" target="_blank" rel="noopener noreferrer">Github</a><br>
+    <p>Powered By LaoShui @ 2025 - 2026 | <a href="https://github.com/laoshuikaixue/xinjiaoyu" target="_blank" rel="noopener noreferrer">Github</a><br>
     温馨提示：仅供学习使用，请勿直接抄袭答案。</p>
     </div>
     """
