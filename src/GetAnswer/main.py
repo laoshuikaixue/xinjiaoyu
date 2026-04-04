@@ -96,8 +96,9 @@ def generic_api_request(url, description, identifier=None, retry=True, expect_da
             return response_data
             
         # 检查是否是登录失效
-        elif (response_data.get('code') == 410 or 
-              (isinstance(response_data.get('msg'), str) and '请先登录' in response_data.get('msg'))):
+        elif (response_data.get('code') in (410, 416) or 
+              (isinstance(response_data.get('msg'), str) and 
+               ('请先登录' in response_data.get('msg') or '请重新登录' in response_data.get('msg')))):
             logger.warning(f"[调试] 检测到登录失效 - {description}, 标识符: {identifier}")
             if retry and check_and_relogin():
                 logger.info(f"重新登录成功，重试获取{description}")
